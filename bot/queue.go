@@ -271,8 +271,19 @@ func (q *Queue) PlayCurrent() error {
 	currentTrack := q.GetTrack(0)
 	filepath := os.ExpandEnv(viper.GetString("cache.directory") + "/" + currentTrack.GetFilename())
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
-		if err := DJ.YouTubeDL.Download(q.GetTrack(0)); err != nil {
-			return err
+		switch currentTrack.GetService() {
+		case "YouTube":
+			if err := DJ.YouTubeDL.Download(q.GetTrack(0)); err != nil {
+				return err
+			}
+		case "Filesystem":
+			path, err := PathForFileURL(currentTrack.GetURL())
+			if err != nil {
+				return err
+			}
+			if err := CacheMP3File(path); err != nil {
+				return err
+			}
 		}
 	}
 	source := gumbleffmpeg.SourceFile(filepath)

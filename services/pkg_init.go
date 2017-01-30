@@ -20,6 +20,7 @@ var Services []interfaces.Service
 
 func init() {
 	Services = []interfaces.Service{
+		NewFilesystemService(),
 		NewMixcloudService(),
 		NewSoundCloudService(),
 		NewYouTubeService(),
