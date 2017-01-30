@@ -282,7 +282,6 @@ func (dj *MumbleDJ) FindAndExecuteCommand(user *gumble.User, message string) (st
 func (dj *MumbleDJ) GetService(url string) (interfaces.Service, error) {
 	for _, service := range dj.AvailableServices {
 		if service.CheckURL(url) {
-			fmt.Println("Matched service", service.GetReadableName())
 			return service, nil
 		}
 	}

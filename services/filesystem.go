@@ -9,6 +9,7 @@ package services
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -35,7 +36,7 @@ func NewFilesystemService() *Filesystem {
 			ReadableName: "Filesystem",
 			Format:       "bestaudio",
 			TrackRegex: []*regexp.Regexp{
-				regexp.MustCompile(`file:\/\/\/.*\.[mM][pP]3`),
+				regexp.MustCompile(`.*`),
 				// regexp.MustCompile(`.*`),
 			},
 			PlaylistRegex: []*regexp.Regexp{
@@ -58,20 +59,21 @@ func (fs *Filesystem) CheckAPIKey() error {
 // tracks associated with the URL. An error is returned
 // if any error occurs during the API call.
 func (fs *Filesystem) GetTracks(url string, submitter *gumble.User) ([]interfaces.Track, error) {
+	fmt.Println(url)
 	tracks := make([]interfaces.Track, 0)
 	if fs.isTrack(url) {
+		fmt.Println("Creating Track")
 		path, err := bot.PathForFileURL(url)
 		if err != nil {
 			return tracks, err
 		}
 		track, err := fs.createTrackForFile(path, submitter)
-		if err != nil {
-			tracks = append(tracks, *track)
+		if err == nil {
+			tracks = append(tracks, track)
 		} else {
 			return tracks, err
 		}
-	}
-	if fs.isPlaylist(url) {
+	} else if fs.isPlaylist(url) {
 		path, err := bot.PathForFileURL(url)
 		if err != nil {
 			return tracks, err
@@ -100,13 +102,13 @@ func (fs *Filesystem) GetTracks(url string, submitter *gumble.User) ([]interface
 func (fs *Filesystem) createTrackForFile(path string, submitter *gumble.User) (*bot.Track, error) {
 	mp3file, err := id3.Open(path)
 	defer mp3file.Close()
-	if err == nil {
+	if err != nil {
 		return nil, err
 	}
 	basename := filepath.Base(path)
 	track := bot.Track{
 		ID:        basename,
-		URL:       "file:///" + path,
+		URL:       "file://" + path,
 		Title:     mp3file.Artist(),
 		Submitter: submitter.Name,
 		Service:   fs.GetReadableName(),
