@@ -271,6 +271,7 @@ func (q *Queue) PlayCurrent() error {
 	currentTrack := q.GetTrack(0)
 	filepath := os.ExpandEnv(viper.GetString("cache.directory") + "/" + currentTrack.GetFilename())
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
+		fmt.Println(currentTrack.GetService())
 		switch currentTrack.GetService() {
 		case "YouTube":
 			if err := DJ.YouTubeDL.Download(q.GetTrack(0)); err != nil {
