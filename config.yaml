@@ -143,6 +143,8 @@ files:
     # Directory to search for music in. Allowed to have shell expandable
     # components.
     music_directory: "~/Music"
+    messages:
+        no_file_found_error: "No matching file found in music directory"
 
 
 commands:
