@@ -8,8 +8,10 @@
 package bot
 
 import (
+	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 
 	"github.com/spf13/viper"
@@ -39,7 +41,9 @@ func PathForFileURL(url string) (string, error) {
 // CacheMP3File copies the given path into the cache directory. Returns an error
 // if there was one, nil otherwise.
 func CacheMP3File(path string) error {
-	destinationPath := os.ExpandEnv(viper.GetString("cache.directory") + "/" + path)
+	fmt.Println("Caching", path)
+	destinationPath := getCachePathForPath(path)
+	fmt.Printf("Destination path:", destinationPath)
 	reader, err := os.Open(path)
 	if err != nil {
 		return err
@@ -51,5 +55,10 @@ func CacheMP3File(path string) error {
 	}
 	defer writer.Close()
 	_, err = io.Copy(writer, reader)
+	fmt.Println("Caching, error is", err)
 	return err
+}
+
+func getCachePathForPath(path string) string {
+	return os.ExpandEnv(viper.GetString("cache.directory") + "/" + filepath.Base(path))
 }
