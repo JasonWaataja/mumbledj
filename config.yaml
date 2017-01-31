@@ -138,6 +138,13 @@ admins:
         - "SuperUser"
 
 
+files:
+
+    # Directory to search for music in. Allowed to have shell expandable
+    # components.
+    music_directory: "~/Music"
+
+
 commands:
 
     # Character used to designate commands from normal text messages.

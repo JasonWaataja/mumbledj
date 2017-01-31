@@ -1,7 +1,7 @@
 /*
  * MumbleDJ
  * By Matthieu Grieger
- * services/yournewservice.go
+ * services/filesystem.go
  * Copyright (c) 2016 Matthieu Grieger (MIT License)
  */
 

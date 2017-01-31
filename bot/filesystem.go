@@ -1,7 +1,7 @@
 /*
  * MumbleDJ
  * By Matthieu Grieger
- * bot/queue.go
+ * bot/filesystem.go
  * Copyright (c) 2016 Matthieu Grieger (MIT License)
  */
 
