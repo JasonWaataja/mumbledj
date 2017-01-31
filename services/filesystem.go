@@ -85,6 +85,6 @@ func (fs *Filesystem) CreateTrackForLocalFile(localPath string, submitter *gumbl
 
 // CreateTracksForLocalFile scans the localPath and creates a corresponding list
 // of tracks, assuming that the file is a playlist file.
-func (fs *Filesystem) CreateTracksForLocalFile(localPath string, submitter *gumble.User) ([]*bot.Track, error) {
+func (fs *Filesystem) CreateTracksForLocalFile(localPath string, submitter *gumble.User) ([]bot.Track, error) {
 	return nil, nil
 }
