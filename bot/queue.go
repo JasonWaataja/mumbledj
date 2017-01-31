@@ -270,8 +270,16 @@ func (q *Queue) SkipPlaylist() {
 func (q *Queue) PlayCurrent() error {
 	fmt.Println("Playing current")
 	currentTrack := q.GetTrack(0)
-	filepath := os.ExpandEnv(viper.GetString("cache.directory") + "/" + currentTrack.GetFilename())
+	var filepath string
+	if currentTrack.IsLocal() {
+		filepath = GetPathForLocalFile(currentTrack.GetFilename())
+	} else {
+		filepath = os.ExpandEnv(viper.GetString("cache.directory") + "/" + currentTrack.GetFilename())
+	}
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
+		if currentTrack.IsLocal() {
+			return errors.New(viper.GetString("files.messages.no_file_found_error"))
+		}
 		if err := DJ.YouTubeDL.Download(q.GetTrack(0)); err != nil {
 			return err
 		}
@@ -352,8 +360,11 @@ func (q *Queue) StopCurrent() error {
 func (q *Queue) playIfNeeded() error {
 	fmt.Println("Playing if needed")
 	if DJ.AudioStream == nil && q.Length() > 0 {
-		if err := DJ.YouTubeDL.Download(q.GetTrack(0)); err != nil {
-			return err
+		track := q.GetTrack(0)
+		if !track.IsLocal() {
+			if err := DJ.YouTubeDL.Download(track); err != nil {
+				return err
+			}
 		}
 		if err := q.PlayCurrent(); err != nil {
 			return err
