@@ -59,4 +59,5 @@ func (c *AddlocalCommand) Execute(user *gumble.User, args ...string) (string, bo
 	if _, err := os.Stat(path); err != nil {
 		return "", true, errors.New(viper.GetSTring("commands.addlocal.messages.no_matching_song_error"))
 	}
+
 }

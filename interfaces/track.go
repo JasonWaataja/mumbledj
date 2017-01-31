@@ -11,6 +11,7 @@ import "time"
 
 // Track is an interface of methods that must be implemented by tracks.
 type Track interface {
+	IsLocal() bool
 	GetID() string
 	GetURL() string
 	GetTitle() string
