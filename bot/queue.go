@@ -268,6 +268,7 @@ func (q *Queue) SkipPlaylist() {
 
 // PlayCurrent creates a new audio stream and begins playing the current track.
 func (q *Queue) PlayCurrent() error {
+	fmt.Println("Playing current")
 	currentTrack := q.GetTrack(0)
 	filepath := os.ExpandEnv(viper.GetString("cache.directory") + "/" + currentTrack.GetFilename())
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
@@ -361,9 +362,25 @@ func (q *Queue) StopCurrent() error {
 }
 
 func (q *Queue) playIfNeeded() error {
+	fmt.Println("Playing if needed")
 	if DJ.AudioStream == nil && q.Length() > 0 {
-		if err := DJ.YouTubeDL.Download(q.GetTrack(0)); err != nil {
-			return err
+		fmt.Println("Seems to need to be played")
+		track := q.GetTrack(0)
+		switch track.GetService() {
+		case "YouTube":
+			if err := DJ.YouTubeDL.Download(track); err != nil {
+				return err
+			}
+		case "Filesystem":
+			path, err := PathForFileURL(track.GetURL())
+			if err != nil {
+				return err
+			}
+			fmt.Println("Got path")
+			if err := CacheMP3File(path); err != nil {
+				return err
+			}
+			fmt.Println("Finished caching")
 		}
 		if err := q.PlayCurrent(); err != nil {
 			return err

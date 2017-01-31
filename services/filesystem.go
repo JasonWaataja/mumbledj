@@ -9,7 +9,6 @@ package services
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -59,10 +58,8 @@ func (fs *Filesystem) CheckAPIKey() error {
 // tracks associated with the URL. An error is returned
 // if any error occurs during the API call.
 func (fs *Filesystem) GetTracks(url string, submitter *gumble.User) ([]interfaces.Track, error) {
-	fmt.Println(url)
 	tracks := make([]interfaces.Track, 0)
 	if fs.isTrack(url) {
-		fmt.Println("Creating Track")
 		path, err := bot.PathForFileURL(url)
 		if err != nil {
 			return tracks, err
