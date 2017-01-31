@@ -1,7 +1,7 @@
 /*
  * MumbleDJ
  * By Matthieu Grieger
- * commands/yournewcommand.go
+ * commands/addlocal.go
  * Copyright (c) 2016 Matthieu Grieger (MIT License)
  */
 
@@ -9,12 +9,12 @@ package commands
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"strings"
 
 	"github.com/layeh/gumble/gumble"
-	"github.com/matthieugrieger/mumbledj/interfaces"
+	"github.com/matthieugrieger/mumbledj/bot"
+	"github.com/matthieugrieger/mumbledj/services"
 	"github.com/spf13/viper"
 )
 
@@ -53,11 +53,36 @@ func (c *AddlocalCommand) Execute(user *gumble.User, args ...string) (string, bo
 		return "", true, errors.New(viper.GetString("commands.addlocal.messages.no_argument_error"))
 	}
 
+	// If arguments were split around spaces, put them back together
+	// separated by spaces.
 	arg := strings.Join(args, " ")
 
-	path := viper.GetString("files.music_directory") + "/" + arg
+	path := bot.GetPathForLocalFile(arg)
+
+	if bot.PathIsSong(path) {
+		for _, service := range DJ.AvailableServices {
+			fs, ok := service.(services.Filesystem)
+			if ok {
+				track, err := fs.CreateTrackForLocalFile(path, user)
+				if err != nil {
+					return viper.GetString("commands.addlocal.track_creation_error", true, err)
+				} else {
+					return "", true, nil
+				}
+			}
+		}
+		return "", true, errors.New(viper.GetString("commands.addlocal.no_filesystem_service_error"))
+	} else if bot.PathIsPlaylist(path) {
+		for _, service := DJ.AvailableServices {
+			fs, ok := service.(services.Filesystem)
+			if ok {
+			}
+		}
+
+	}
+
 	if _, err := os.Stat(path); err != nil {
-		return "", true, errors.New(viper.GetSTring("commands.addlocal.messages.no_matching_song_error"))
+		return "", true, errors.New(viper.GetString("commands.addlocal.messages.no_matching_song_error"))
 	}
 
 }

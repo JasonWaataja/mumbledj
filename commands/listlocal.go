@@ -8,11 +8,7 @@
 package commands
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/layeh/gumble/gumble"
-	"github.com/matthieugrieger/mumbledj/interfaces"
 	"github.com/spf13/viper"
 )
 
@@ -33,7 +29,7 @@ func (c *ListlocalCommand) Description() string {
 
 // IsAdminCommand returns true if the command is only for admin use, and
 // returns false otherwise.
-func (c *YourNewCommand) IsAdminCommand() bool {
+func (c *ListlocalCommand) IsAdminCommand() bool {
 	return viper.GetBool("commands.listlocal.is_admin")
 }
 
@@ -47,5 +43,5 @@ func (c *YourNewCommand) IsAdminCommand() bool {
 // Example return statement:
 //    return "This is a private message!", true, nil
 func (c *ListlocalCommand) Execute(user *gumble.User, args ...string) (string, bool, error) {
-	musicDir := viper.GetString(
+	return "", true, nil
 }

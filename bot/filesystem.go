@@ -8,11 +8,8 @@
 package bot
 
 import (
-	"fmt"
-	"io"
 	"os"
 	"os/user"
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -24,8 +21,32 @@ func GetMusicDir() string {
 }
 
 func TildeExpand(path string) string {
-	homeDir := user.Current().HomeDir
-	return strings.Replace(path, "~", homeDir, -1)
+	currentUser, err := user.Current()
+	var homedir string
+	if err != nil {
+		homedir = os.Getenv("$HOME")
+		if homedir == "" {
+			panic("Failed to get user home directory.")
+		}
+	} else {
+		homedir = currentUser.HomeDir
+	}
+	return strings.Replace(path, "~", homedir, -1)
+}
+
+// PathIsSong takes a path and returns true if it ends with an mp3 extension.
+// This could be implemented with strings.HasSuffix but this regex allows for
+// capital letters. Also returns false if there was an error with the regex.
+func PathIsSong(path string) bool {
+	isSong, err := regexp.MatchString(`^.+\.[mM][pP]3$`, path)
+	return err == nil && isSong
+}
+
+// PathIsPlaylist takes a path and returns true if it ends with an m3u
+// extension. Also returns false if there was an error with the regex.
+func PathIsPlaylist(path string) bool {
+	isPlaylist, err := regexp.MatchString(`^.+\.[mM]3[uU]$`, path)
+	return err == nil && isPlaylist
 }
 
 func GetPathForLocalFile(localPath string) string {

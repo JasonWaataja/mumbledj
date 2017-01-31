@@ -232,6 +232,7 @@ func (yt *YouTube) getTrack(id string, submitter *gumble.User, offset time.Durat
 	duration := durationConverted.ToDuration()
 
 	return bot.Track{
+		Local:          false,
 		ID:             id,
 		URL:            "https://youtube.com/watch?v=" + id,
 		Title:          title,
