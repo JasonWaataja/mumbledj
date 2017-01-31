@@ -176,6 +176,7 @@ func (sc *SoundCloud) getTrack(obj *jason.Object, offset time.Duration, submitte
 	}
 
 	return bot.Track{
+		Local:          false,
 		ID:             id,
 		URL:            url,
 		Title:          title,

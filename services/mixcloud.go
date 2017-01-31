@@ -94,6 +94,7 @@ func (mc *Mixcloud) GetTracks(url string, submitter *gumble.User) ([]interfaces.
 	}
 
 	track := bot.Track{
+		Local:          false,
 		ID:             id,
 		URL:            trackURL,
 		Title:          title,

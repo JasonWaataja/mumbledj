@@ -272,20 +272,8 @@ func (q *Queue) PlayCurrent() error {
 	currentTrack := q.GetTrack(0)
 	filepath := os.ExpandEnv(viper.GetString("cache.directory") + "/" + currentTrack.GetFilename())
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
-		fmt.Println(currentTrack.GetService())
-		switch currentTrack.GetService() {
-		case "YouTube":
-			if err := DJ.YouTubeDL.Download(q.GetTrack(0)); err != nil {
-				return err
-			}
-		case "Filesystem":
-			path, err := PathForFileURL(currentTrack.GetURL())
-			if err != nil {
-				return err
-			}
-			if err := CacheMP3File(path); err != nil {
-				return err
-			}
+		if err := DJ.YouTubeDL.Download(q.GetTrack(0)); err != nil {
+			return err
 		}
 	}
 	source := gumbleffmpeg.SourceFile(filepath)
@@ -364,23 +352,8 @@ func (q *Queue) StopCurrent() error {
 func (q *Queue) playIfNeeded() error {
 	fmt.Println("Playing if needed")
 	if DJ.AudioStream == nil && q.Length() > 0 {
-		fmt.Println("Seems to need to be played")
-		track := q.GetTrack(0)
-		switch track.GetService() {
-		case "YouTube":
-			if err := DJ.YouTubeDL.Download(track); err != nil {
-				return err
-			}
-		case "Filesystem":
-			path, err := PathForFileURL(track.GetURL())
-			if err != nil {
-				return err
-			}
-			fmt.Println("Got path")
-			if err := CacheMP3File(path); err != nil {
-				return err
-			}
-			fmt.Println("Finished caching")
+		if err := DJ.YouTubeDL.Download(q.GetTrack(0)); err != nil {
+			return err
 		}
 		if err := q.PlayCurrent(); err != nil {
 			return err

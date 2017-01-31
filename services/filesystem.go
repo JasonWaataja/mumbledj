@@ -8,13 +8,9 @@
 package services
 
 import (
-	"bufio"
-	"os"
-	"path/filepath"
 	"regexp"
-	"strings"
+	"time"
 
-	// id3 "github.com/ascherkus/go-id3"
 	"github.com/layeh/gumble/gumble"
 	"github.com/matthieugrieger/mumbledj/bot"
 	"github.com/matthieugrieger/mumbledj/interfaces"
@@ -36,10 +32,9 @@ func NewFilesystemService() *Filesystem {
 			Format:       "bestaudio",
 			TrackRegex: []*regexp.Regexp{
 				regexp.MustCompile(`.*`),
-				// regexp.MustCompile(`.*`),
 			},
 			PlaylistRegex: []*regexp.Regexp{
-				regexp.MustCompile(`file:\/\/\/.*\.[mM]3[uU]`),
+				regexp.MustCompile(`.*`),
 			},
 		},
 	}
@@ -62,8 +57,34 @@ func (fs *Filesystem) GetTracks(url string, submitter *gumble.User) ([]interface
 	return tracks, nil
 }
 
-// CreateTrackForLocalFile creates a track that represents a file in the music
-// directory. Returns the track on success an nil on failure with an error.
-func CreateTrackForLocalFile(localPath string) (*bot.Track, error) {
+// CreateTrackForPath creates a bot.Track for the given localPath which is
+// interpreted relative to the music directory. Returns the track on success and
+// nil and an error on failure.
+func (fs *Filesystem) CreateTrackForLocalFile(localPath string, submitter *gumble.User) (*bot.Track, error) {
+	path := bot.GetPathForLocalFile(localPath)
+	mp3Reader, err := id3.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer mp3Reader.Close()
 
+	// Leaving out some fields for their zero values.
+	track := bot.Track{
+		Local:          true,
+		ID:             localPath,
+		Title:          mp3Reader.Title(),
+		Author:         mp3Reader.Artist(),
+		Submitter:      submitter.Name,
+		Service:        fs.GetReadableName(),
+		Filename:       localPath,
+		Duration:       time.Duration(0),
+		PlaybackOffset: 0,
+	}
+	return &track, nil
+}
+
+// CreateTracksForLocalFile scans the localPath and creates a corresponding list
+// of tracks, assuming that the file is a playlist file.
+func (fs *Filesystem) CreateTracksForLocalFile(localPath string, submitter *gumble.User) ([]*bot.Track, error) {
+	return nil, nil
 }

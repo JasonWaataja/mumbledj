@@ -31,8 +31,8 @@ type Track struct {
 }
 
 // IsLocal returns whether or not the track is on the local filesystem.
-func IsLocal() bool {
-	return Local
+func (t Track) IsLocal() bool {
+	return t.Local
 }
 
 // GetID returns the ID of the track.
