@@ -268,7 +268,6 @@ func (q *Queue) SkipPlaylist() {
 
 // PlayCurrent creates a new audio stream and begins playing the current track.
 func (q *Queue) PlayCurrent() error {
-	fmt.Println("Playing current")
 	currentTrack := q.GetTrack(0)
 	var filepath string
 	if currentTrack.IsLocal() {
@@ -358,7 +357,6 @@ func (q *Queue) StopCurrent() error {
 }
 
 func (q *Queue) playIfNeeded() error {
-	fmt.Println("Playing if needed")
 	if DJ.AudioStream == nil && q.Length() > 0 {
 		track := q.GetTrack(0)
 		if !track.IsLocal() {
