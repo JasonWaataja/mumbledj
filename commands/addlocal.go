@@ -20,24 +20,24 @@ import (
 	"github.com/spf13/viper"
 )
 
-// AddlocalCommand is a command that adds a tracks from the local filesystem. It
+// AddLocalCommand is a command that adds a tracks from the local filesystem. It
 // searches the music directory if it exists and adds the track if the file is
 // there.
-type AddlocalCommand struct{}
+type AddLocalCommand struct{}
 
 // Aliases returns the current aliases for the command.
-func (c *AddlocalCommand) Aliases() []string {
+func (c *AddLocalCommand) Aliases() []string {
 	return viper.GetStringSlice("commands.addlocal.aliases")
 }
 
 // Description returns the description for the command.
-func (c *AddlocalCommand) Description() string {
+func (c *AddLocalCommand) Description() string {
 	return viper.GetString("commands.addlocal.description")
 }
 
 // IsAdminCommand returns true if the command is only for admin use, and
 // returns false otherwise.
-func (c *AddlocalCommand) IsAdminCommand() bool {
+func (c *AddLocalCommand) IsAdminCommand() bool {
 	return viper.GetBool("commands.addlocal.is_admin")
 }
 
@@ -50,7 +50,7 @@ func (c *AddlocalCommand) IsAdminCommand() bool {
 //            If no error has occurred, pass nil instead.
 // Example return statement:
 //    return "This is a private message!", true, nil
-func (c *AddlocalCommand) Execute(user *gumble.User, args ...string) (string, bool, error) {
+func (c *AddLocalCommand) Execute(user *gumble.User, args ...string) (string, bool, error) {
 	if len(args) == 0 {
 		return "", true, errors.New(viper.GetString("commands.addlocal.messages.no_argument_error"))
 	}
@@ -59,7 +59,15 @@ func (c *AddlocalCommand) Execute(user *gumble.User, args ...string) (string, bo
 	// separated by spaces.
 	localPath := strings.Join(args, " ")
 
+	fmt.Println("Music dir:", bot.GetMusicDir())
 	path := bot.GetPathForLocalFile(localPath)
+	path, err := bot.IsSafePath(path)
+
+	if err != nil {
+		return "", true, err
+	}
+
+	fmt.Println(path)
 
 	if _, err := os.Stat(path); err != nil {
 		return "", true, errors.New(viper.GetString("commands.addlocal.messages.no_matching_song_error"))
@@ -68,6 +76,7 @@ func (c *AddlocalCommand) Execute(user *gumble.User, args ...string) (string, bo
 	tracks := make([]interfaces.Track, 0)
 
 	if bot.PathIsSong(path) {
+		found := false
 		for _, service := range DJ.AvailableServices {
 			fs, ok := service.(*services.Filesystem)
 			if ok {
@@ -76,10 +85,13 @@ func (c *AddlocalCommand) Execute(user *gumble.User, args ...string) (string, bo
 					return "", true, err
 				} else {
 					tracks = append(tracks, track)
+					found = true
 				}
 			}
 		}
-		return "", true, errors.New(viper.GetString("commands.addlocal.messages.no_filesystem_service_error"))
+		if !found {
+			return "", true, errors.New(viper.GetString("commands.addlocal.messages.no_filesystem_service_error"))
+		}
 	} else if bot.PathIsPlaylist(path) {
 		for _, service := range DJ.AvailableServices {
 			fs, ok := service.(*services.Filesystem)
