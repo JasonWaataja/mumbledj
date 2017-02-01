@@ -11,9 +11,11 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/layeh/gumble/gumble"
+	"github.com/matthieugrieger/mumbledj/bot"
 	id3 "github.com/mikkyang/id3-go"
 	"github.com/spf13/viper"
 )
@@ -39,12 +41,16 @@ func (c *ListlocalCommand) IsAdminCommand() bool {
 	return viper.GetBool("commands.listlocal.is_admin")
 }
 
+// MP3Info represents the basic inforamtion for an MP3 file that is used to
+// print information on the song.
 type MP3Info struct {
 	SongName string
 	Artist   string
 	Duration time.Duration
 }
 
+// NewMP3Info creates an MP3Info for the given path. Returns a new MP3Info on
+// success and nil on failure.
 func NewMP3Info(path string) *MP3Info {
 	var songInfo MP3Info
 	reader, err := id3.Open(path)
@@ -58,21 +64,28 @@ func NewMP3Info(path string) *MP3Info {
 	return &songInfo
 }
 
+// SongDirectory represents the information on a directory that is used to print
+// information about its contents. It does not know its path, scanning specific
+// paths is left to the user.
 type SongDirectory struct {
 	Name    string
 	Entries []interface{}
 }
 
+// NewSongDirectory creates a new SongDirectory with the given name.
 func NewSongDirectory(name string) *SongDirectory {
 	var songDir SongDirectory
 	songDir.Name = name
 	return &songDir
 }
 
+// CreateInfo returns a string representing songInfo. It contains the title,
+// artist, and duration of the song. This string ends with a newline character.
+// The string is indented with one tab character indentation times.
 func (songInfo *MP3Info) CreateInfo(indentation int) string {
 	var infoString string
 	for i := 0; i < indentation; i++ {
-		infoString += " "
+		infoString += "\t"
 	}
 	infoString += songInfo.SongName + " " + songInfo.Artist
 	infoString += " (" + songInfo.Duration.String() + ")\n"
@@ -80,10 +93,16 @@ func (songInfo *MP3Info) CreateInfo(indentation int) string {
 	return infoString
 }
 
+// CreateInfo returns a string representing songDir. It incorporates the name of
+// the directory and lists its contents with an additional indentation. The
+// string is indented with one tab character indentation times.
+//
+// WARNING: THE ERROR MAY REVEAL INFORMATION ABOUT THE SONG DIRECTORY LOCATION.
+// THIS SHOULD BE FIXED LATER.
 func (songDir *SongDirectory) CreateInfo(indentation int) string {
 	var infoString string
 	for i := 0; i < indentation; i++ {
-		infoString += " "
+		infoString += "\t"
 	}
 	infoString += songDir.Name + "\n"
 	for _, entry := range songDir.Entries {
@@ -97,6 +116,10 @@ func (songDir *SongDirectory) CreateInfo(indentation int) string {
 	return infoString
 }
 
+// ScanDirectory scans the given path and appends its contents to the entries of songDir.
+//
+// WARNING: THE ERROR MAY REVEAL INFORMATION ABOUT THE SONG DIRECTORY LOCATION.
+// THIS SHOULD BE FIXED LATER.
 func (songDir *SongDirectory) ScanDirectory(path string) error {
 	dirInfo, err := os.Stat(path)
 	if err != nil {
@@ -137,5 +160,31 @@ func (songDir *SongDirectory) ScanDirectory(path string) error {
 // Example return statement:
 //    return "This is a private message!", true, nil
 func (c *ListlocalCommand) Execute(user *gumble.User, args ...string) (string, bool, error) {
-	return "", true, nil
+	// TODO: Fix the fact it sometimes directly returns the error. This may
+	// reveal to those sending messages information about the filesystem.
+
+	if len(args) == 0 {
+		return "", true, errors.New(viper.GetString("commands.listlocal.messages.no_argument_error"))
+	}
+
+	// If arguments were split around spaces, put them back together
+	// separated by spaces.
+	localPath := strings.Join(args, " ")
+
+	path := bot.GetPathForLocalFile(localPath)
+	path, err := bot.IsSafePath(path)
+
+	if err != nil {
+		return "", true, err
+	}
+
+	songDir := NewSongDirectory("Music Directory")
+	err = songDir.ScanDirectory(path)
+
+	if err != nil {
+		return "", true, errors.New(viper.GetString("commands.listlocal.messages.scan_failure_error"))
+	}
+	infoString := songDir.CreateInfo(0)
+
+	return infoString, true, nil
 }
