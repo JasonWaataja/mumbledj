@@ -140,9 +140,8 @@ admins:
 
 files:
 
-    # Directory to search for music in. Allowed to have shell expandable
-    # components.
-    music_directory: "~/Music"
+    # Directory to search for music in. Allowed to have shell variables.
+    music_directory: "$HOME/Music"
     messages:
         no_file_found_error: "No matching file found in music directory."
         non_music_dir_prefix_error: "Attempting to use file outside of music directory."

@@ -21,7 +21,7 @@ var Commands []interfaces.Command
 func init() {
 	Commands = []interfaces.Command{
 		new(AddCommand),
-		new(AddlocalCommand),
+		new(AddLocalCommand),
 		new(AddNextCommand),
 		new(CacheSizeCommand),
 		new(CurrentTrackCommand),

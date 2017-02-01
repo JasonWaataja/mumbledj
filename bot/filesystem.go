@@ -10,7 +10,6 @@ package bot
 import (
 	"errors"
 	"os"
-	"os/user"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -19,21 +18,7 @@ import (
 )
 
 func GetMusicDir() string {
-	return os.ExpandEnv(TildeExpand(viper.GetString("files.music_dir")))
-}
-
-func TildeExpand(path string) string {
-	currentUser, err := user.Current()
-	var homedir string
-	if err != nil {
-		homedir = os.Getenv("$HOME")
-		if homedir == "" {
-			panic("Failed to get user home directory.")
-		}
-	} else {
-		homedir = currentUser.HomeDir
-	}
-	return strings.Replace(path, "~", homedir, -1)
+	return os.ExpandEnv(viper.GetString("files.music_directory"))
 }
 
 // PathIsSong takes a path and returns true if it ends with an mp3 extension.
@@ -53,6 +38,17 @@ func PathIsPlaylist(path string) bool {
 
 func GetPathForLocalFile(localPath string) string {
 	return GetMusicDir() + "/" + localPath
+}
+
+// IsSafePath checks the path to make sure it is in the music directory. Returns
+// the cleaned path on success and a blank string on failure.
+func IsSafePath(path string) (string, error) {
+	cleanedPath := filepath.Clean(path)
+	musicDir := GetMusicDir()
+	if !strings.HasPrefix(cleanedPath, musicDir) {
+		return "", errors.New(viper.GetString("files.non_music_dir_prefix_error"))
+	}
+	return cleanedPath, nil
 }
 
 func StripMusicDirPath(path string) (string, error) {
