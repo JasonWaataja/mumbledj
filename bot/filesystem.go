@@ -8,8 +8,10 @@
 package bot
 
 import (
+	"errors"
 	"os"
 	"os/user"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -51,4 +53,13 @@ func PathIsPlaylist(path string) bool {
 
 func GetPathForLocalFile(localPath string) string {
 	return GetMusicDir() + "/" + localPath
+}
+
+func StripMusicDirPath(path string) (string, error) {
+	cleanedPath := filepath.Clean(path)
+	musicDir := GetMusicDir()
+	if !strings.HasPrefix(cleanedPath, musicDir) {
+		return "", errors.New(viper.GetString("files.non_music_dir_prefix_error"))
+	}
+	return cleanedPath[len(musicDir):], nil
 }

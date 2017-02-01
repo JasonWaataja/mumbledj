@@ -144,7 +144,8 @@ files:
     # components.
     music_directory: "~/Music"
     messages:
-        no_file_found_error: "No matching file found in music directory"
+        no_file_found_error: "No matching file found in music directory."
+        non_music_dir_prefix_error: "Attempting to use file outside of music directory."
 
 
 commands:
