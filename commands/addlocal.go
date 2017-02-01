@@ -59,7 +59,6 @@ func (c *AddLocalCommand) Execute(user *gumble.User, args ...string) (string, bo
 	// separated by spaces.
 	localPath := strings.Join(args, " ")
 
-	fmt.Println("Music dir:", bot.GetMusicDir())
 	path := bot.GetPathForLocalFile(localPath)
 	path, err := bot.IsSafePath(path)
 

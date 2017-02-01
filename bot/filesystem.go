@@ -46,7 +46,7 @@ func IsSafePath(path string) (string, error) {
 	cleanedPath := filepath.Clean(path)
 	musicDir := GetMusicDir()
 	if !strings.HasPrefix(cleanedPath, musicDir) {
-		return "", errors.New(viper.GetString("files.non_music_dir_prefix_error"))
+		return "", errors.New(viper.GetString("files.messages.non_music_dir_prefix_error"))
 	}
 	return cleanedPath, nil
 }
@@ -55,7 +55,7 @@ func StripMusicDirPath(path string) (string, error) {
 	cleanedPath := filepath.Clean(path)
 	musicDir := GetMusicDir()
 	if !strings.HasPrefix(cleanedPath, musicDir) {
-		return "", errors.New(viper.GetString("files.non_music_dir_prefix_error"))
+		return "", errors.New(viper.GetString("files.messages.non_music_dir_prefix_error"))
 	}
 	return cleanedPath[len(musicDir):], nil
 }
