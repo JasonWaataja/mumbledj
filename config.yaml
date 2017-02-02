@@ -269,6 +269,17 @@ commands:
         is_admin: true
         description: "Stops the bot and cleans its cache directory."
 
+    listlocal:
+        aliases:
+            - "listlocal"
+            - "ll"
+        is_admin: false
+        description: "Lists available songs on the local filesystem."
+        messages:
+            scan_non_directory_error: "Attemping to scan non-directory for entries"
+            no_argument_error: "No argument provided to listlocal"
+            scan_failure_error: "Failed to scan directory"
+
     listtracks:
         aliases:
             - "listtracks"

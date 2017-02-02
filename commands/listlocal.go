@@ -20,24 +20,24 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Listlocal is a command that adds a tracks from the local filesystem. It
+// ListLocal is a command that adds a tracks from the local filesystem. It
 // searches the music directory if it exists and adds the track if the file is
 // there.
-type ListlocalCommand struct{}
+type ListLocalCommand struct{}
 
 // Aliases returns the current aliases for the command.
-func (c *ListlocalCommand) Aliases() []string {
+func (c *ListLocalCommand) Aliases() []string {
 	return viper.GetStringSlice("commands.listlocal.aliases")
 }
 
 // Description returns the description for the command.
-func (c *ListlocalCommand) Description() string {
+func (c *ListLocalCommand) Description() string {
 	return viper.GetString("commands.listlocal.description")
 }
 
 // IsAdminCommand returns true if the command is only for admin use, and
 // returns false otherwise.
-func (c *ListlocalCommand) IsAdminCommand() bool {
+func (c *ListLocalCommand) IsAdminCommand() bool {
 	return viper.GetBool("commands.listlocal.is_admin")
 }
 
@@ -88,7 +88,7 @@ func (songInfo *MP3Info) CreateInfo(indentation int) string {
 		infoString += "\t"
 	}
 	infoString += songInfo.SongName + " " + songInfo.Artist
-	infoString += " (" + songInfo.Duration.String() + ")\n"
+	infoString += " (" + songInfo.Duration.String() + ")<br>"
 
 	return infoString
 }
@@ -104,7 +104,7 @@ func (songDir *SongDirectory) CreateInfo(indentation int) string {
 	for i := 0; i < indentation; i++ {
 		infoString += "\t"
 	}
-	infoString += songDir.Name + "\n"
+	infoString += songDir.Name + "<br>"
 	for _, entry := range songDir.Entries {
 		switch t := entry.(type) {
 		case *MP3Info:
@@ -126,8 +126,7 @@ func (songDir *SongDirectory) ScanDirectory(path string) error {
 		return err
 	}
 	if !dirInfo.IsDir() {
-		// TODO: Replace this with a config message.
-		return errors.New("Attemping to scan non-directory for entries")
+		return errors.New(viper.GetString("commands.listlocal.messages.scan_non_directory_error"))
 	}
 	entries, err := ioutil.ReadDir(path)
 	if err != nil {
@@ -159,13 +158,9 @@ func (songDir *SongDirectory) ScanDirectory(path string) error {
 //            If no error has occurred, pass nil instead.
 // Example return statement:
 //    return "This is a private message!", true, nil
-func (c *ListlocalCommand) Execute(user *gumble.User, args ...string) (string, bool, error) {
+func (c *ListLocalCommand) Execute(user *gumble.User, args ...string) (string, bool, error) {
 	// TODO: Fix the fact it sometimes directly returns the error. This may
 	// reveal to those sending messages information about the filesystem.
-
-	if len(args) == 0 {
-		return "", true, errors.New(viper.GetString("commands.listlocal.messages.no_argument_error"))
-	}
 
 	// If arguments were split around spaces, put them back together
 	// separated by spaces.

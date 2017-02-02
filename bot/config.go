@@ -139,6 +139,13 @@ func SetDefaultConfig() {
 	viper.SetDefault("commands.kill.is_admin", true)
 	viper.SetDefault("commands.kill.description", "Stops the bot and cleans its cache directory.")
 
+	viper.SetDefault("commands.listlocal.aliases", []string{"listlocal, ll"})
+	viper.SetDefault("commands.listlocal.is_admin", false)
+	viper.SetDefault("commadns.listlocal.description", "Lists available songs on the local filesystem.")
+	viper.SetDefault("commands.listlocal.messages.scan_non_directory_error", "Attemping to scan non-directory for entries")
+	viper.SetDefault("commands.listlocal.messages.no_argument_error", "No argument provided to listlocal")
+	viper.SetDefault("commands.listlocal.messages.scan_failure_error", "Failed to scan directory")
+
 	viper.SetDefault("commands.listtracks.aliases", []string{"listtracks", "listsongs", "list", "l"})
 	viper.SetDefault("commands.listtracks.is_admin", false)
 	viper.SetDefault("commands.listtracks.description", "Outputs a list of the tracks currently in the queue.")
