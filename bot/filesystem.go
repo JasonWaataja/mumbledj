@@ -12,8 +12,11 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
+	id3 "github.com/mikkyang/id3-go"
 	"github.com/spf13/viper"
 )
 
@@ -58,4 +61,16 @@ func StripMusicDirPath(path string) (string, error) {
 		return "", errors.New(viper.GetString("files.messages.non_music_dir_prefix_error"))
 	}
 	return cleanedPath[len(musicDir):], nil
+}
+
+func ReadMP3Duration(mp3Reader *id3.File) (time.Duration, error) {
+	durationFrame := mp3Reader.Frame("TLEN")
+	if durationFrame == nil {
+		return 0, errors.New("Failed to read mp3 duration.")
+	}
+	durationMilliseconds, err := strconv.Atoi(durationFrame.String())
+	if err != nil {
+		return 0, err
+	}
+	return time.Duration(durationMilliseconds * 1000), nil
 }

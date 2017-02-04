@@ -41,18 +41,23 @@ func (c *ListLocalCommand) IsAdminCommand() bool {
 	return viper.GetBool("commands.listlocal.is_admin")
 }
 
-// MP3Info represents the basic inforamtion for an MP3 file that is used to
+// CreateInfoer is a type that can create information for itself. It is expected to be indented with the
+type CreateInfoer interface {
+	CreateInfo(indentation int) string
+}
+
+// SongInfo represents the basic inforamtion for an MP3 file that is used to
 // print information on the song.
-type MP3Info struct {
+type SongInfo struct {
 	SongName string
 	Artist   string
 	Duration time.Duration
 }
 
-// NewMP3Info creates an MP3Info for the given path. Returns a new MP3Info on
+// NewSongInfo creates an SongInfo for the given path. Returns a new SongInfo on
 // success and nil on failure.
-func NewMP3Info(path string) *MP3Info {
-	var songInfo MP3Info
+func NewSongInfo(path string) *SongInfo {
+	var songInfo SongInfo
 	reader, err := id3.Open(path)
 	if err != nil {
 		return nil
@@ -60,7 +65,7 @@ func NewMP3Info(path string) *MP3Info {
 	defer reader.Close()
 	songInfo.SongName = reader.Title()
 	songInfo.Artist = reader.Artist()
-	// TODO: Add duration.
+	songInfo.Duration, _ = bot.ReadMP3Duration(reader)
 	return &songInfo
 }
 
@@ -82,7 +87,7 @@ func NewSongDirectory(name string) *SongDirectory {
 // CreateInfo returns a string representing songInfo. It contains the title,
 // artist, and duration of the song. This string ends with a newline character.
 // The string is indented with one tab character indentation times.
-func (songInfo *MP3Info) CreateInfo(indentation int) string {
+func (songInfo *SongInfo) CreateInfo(indentation int) string {
 	var infoString string
 	for i := 0; i < indentation; i++ {
 		infoString += "\t"
@@ -107,7 +112,7 @@ func (songDir *SongDirectory) CreateInfo(indentation int) string {
 	infoString += songDir.Name + "<br>"
 	for _, entry := range songDir.Entries {
 		switch t := entry.(type) {
-		case *MP3Info:
+		case *SongInfo:
 			infoString += t.CreateInfo(indentation + 1)
 		case *SongDirectory:
 			infoString += t.CreateInfo(indentation + 1)
@@ -136,7 +141,7 @@ func (songDir *SongDirectory) ScanDirectory(path string) error {
 		entryPath := path + "/" + entry.Name()
 		switch {
 		case entry.Mode().IsRegular():
-			songInfo := NewMP3Info(entryPath)
+			songInfo := NewSongInfo(entryPath)
 			if songInfo != nil {
 				songDir.Entries = append(songDir.Entries, songInfo)
 			}
