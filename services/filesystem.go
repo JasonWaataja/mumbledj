@@ -9,7 +9,6 @@ package services
 
 import (
 	"regexp"
-	"time"
 
 	"github.com/layeh/gumble/gumble"
 	"github.com/matthieugrieger/mumbledj/bot"
@@ -68,6 +67,9 @@ func (fs *Filesystem) CreateTrackForLocalFile(localPath string, submitter *gumbl
 	}
 	defer mp3Reader.Close()
 
+	// This function returns 0 on failure, which is the desired behavior.
+	duration, _ := bot.ReadMP3Duration(mp3Reader)
+
 	// Leaving out some fields for their zero values.
 	track := bot.Track{
 		Local:          true,
@@ -77,7 +79,7 @@ func (fs *Filesystem) CreateTrackForLocalFile(localPath string, submitter *gumbl
 		Submitter:      submitter.Name,
 		Service:        fs.GetReadableName(),
 		Filename:       localPath,
-		Duration:       time.Duration(0),
+		Duration:       duration,
 		PlaybackOffset: 0,
 	}
 	return &track, nil
