@@ -20,6 +20,14 @@ import (
 	"github.com/spf13/viper"
 )
 
+// IndentationString is the character used to indent string in CreateInfo. It is
+// meant to be used with Mumble's HTML>
+const IndentationString = "&nbsp"
+
+// LineBreakString is the string used to break lines in CreateInfo. It is meant
+// to be used with Mumble's HTML.
+const LineBreakString = "<br>"
+
 // ListLocal is a command that adds a tracks from the local filesystem. It
 // searches the music directory if it exists and adds the track if the file is
 // there.
@@ -90,10 +98,10 @@ func NewSongDirectory(name string) *SongDirectory {
 func (songInfo *SongInfo) CreateInfo(indentation int) string {
 	var infoString string
 	for i := 0; i < indentation; i++ {
-		infoString += "\t"
+		infoString += IndentationString
 	}
 	infoString += songInfo.SongName + " " + songInfo.Artist
-	infoString += " (" + songInfo.Duration.String() + ")<br>"
+	infoString += " (" + songInfo.Duration.String() + ")" + LineBreakString
 
 	return infoString
 }
@@ -107,9 +115,9 @@ func (songInfo *SongInfo) CreateInfo(indentation int) string {
 func (songDir *SongDirectory) CreateInfo(indentation int) string {
 	var infoString string
 	for i := 0; i < indentation; i++ {
-		infoString += "\t"
+		infoString += IndentationString
 	}
-	infoString += songDir.Name + "<br>"
+	infoString += songDir.Name + LineBreakString
 	for _, entry := range songDir.Entries {
 		switch t := entry.(type) {
 		case *SongInfo:
