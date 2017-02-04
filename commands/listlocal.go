@@ -9,8 +9,10 @@ package commands
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -18,11 +20,12 @@ import (
 	"github.com/matthieugrieger/mumbledj/bot"
 	id3 "github.com/mikkyang/id3-go"
 	"github.com/spf13/viper"
+	"github.com/ushis/m3u"
 )
 
 // IndentationString is the character used to indent string in CreateInfo. It is
 // meant to be used with Mumble's HTML>
-const IndentationString = "&nbsp"
+const IndentationString = "&nbsp;"
 
 // LineBreakString is the string used to break lines in CreateInfo. It is meant
 // to be used with Mumble's HTML.
@@ -49,7 +52,9 @@ func (c *ListLocalCommand) IsAdminCommand() bool {
 	return viper.GetBool("commands.listlocal.is_admin")
 }
 
-// CreateInfoer is a type that can create information for itself. It is expected to be indented with the
+// CreateInfoer is a type that can create information for itself. It is expected
+// to be indented with the IndentationString string and have an extra
+// indentation at the end represented with LineBreakString.
 type CreateInfoer interface {
 	CreateInfo(indentation int) string
 }
@@ -70,6 +75,7 @@ func NewSongInfo(path string) *SongInfo {
 	if err != nil {
 		return nil
 	}
+	fmt.Println("opened it")
 	defer reader.Close()
 	songInfo.SongName = reader.Title()
 	songInfo.Artist = reader.Artist()
@@ -82,7 +88,7 @@ func NewSongInfo(path string) *SongInfo {
 // paths is left to the user.
 type SongDirectory struct {
 	Name    string
-	Entries []interface{}
+	Entries []CreateInfoer
 }
 
 // NewSongDirectory creates a new SongDirectory with the given name.
@@ -90,6 +96,39 @@ func NewSongDirectory(name string) *SongDirectory {
 	var songDir SongDirectory
 	songDir.Name = name
 	return &songDir
+}
+
+type Playlist struct {
+	*m3u.Playlist
+	Name string
+}
+
+func NewPlaylist(path string) *Playlist {
+	reader, err := os.Open(path)
+	if err != nil {
+		return nil
+	}
+	playlist, err := m3u.Parse(reader)
+	if err != nil {
+		return nil
+	}
+	name := filepath.Base(path)
+	return &Playlist{&playlist, name}
+}
+
+func (playlist *Playlist) CreateInfo(indentation int) string {
+	var infoString string
+	for i := 0; i < indentation; i++ {
+		infoString += IndentationString
+	}
+	infoString += playlist.Name + LineBreakString
+	for _, track := range *playlist.Playlist {
+		for i := 0; i < indentation+1; i++ {
+			infoString += IndentationString
+		}
+		infoString += track.Title + "(" + time.Duration(track.Time).String() + ")" + LineBreakString
+	}
+	return infoString
 }
 
 // CreateInfo returns a string representing songInfo. It contains the title,
@@ -119,12 +158,7 @@ func (songDir *SongDirectory) CreateInfo(indentation int) string {
 	}
 	infoString += songDir.Name + LineBreakString
 	for _, entry := range songDir.Entries {
-		switch t := entry.(type) {
-		case *SongInfo:
-			infoString += t.CreateInfo(indentation + 1)
-		case *SongDirectory:
-			infoString += t.CreateInfo(indentation + 1)
-		}
+		infoString += entry.CreateInfo(indentation + 1)
 	}
 	return infoString
 }
@@ -149,9 +183,16 @@ func (songDir *SongDirectory) ScanDirectory(path string) error {
 		entryPath := path + "/" + entry.Name()
 		switch {
 		case entry.Mode().IsRegular():
-			songInfo := NewSongInfo(entryPath)
-			if songInfo != nil {
-				songDir.Entries = append(songDir.Entries, songInfo)
+			if bot.PathIsSong(entryPath) {
+				songInfo := NewSongInfo(entryPath)
+				if songInfo != nil {
+					songDir.Entries = append(songDir.Entries, songInfo)
+				} else if bot.PathIsPlaylist(entryPath) {
+					playlist := NewPlaylist(entryPath)
+					if playlist != nil {
+						songDir.Entries = append(songDir.Entries, playlist)
+					}
+				}
 			}
 		case entry.IsDir():
 			newDir := NewSongDirectory(entry.Name())
