@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	id3 "github.com/mikkyang/id3-go"
@@ -28,39 +27,56 @@ func GetMusicDir() string {
 // This could be implemented with strings.HasSuffix but this regex allows for
 // capital letters. Also returns false if there was an error with the regex.
 func PathIsSong(path string) bool {
-	isSong, err := regexp.MatchString(`^.+\.[mM][pP]3$`, path)
+	ext := filepath.Ext(path)
+	isSong, err := regexp.MatchString(`[mM][pP]3`, ext)
 	return err == nil && isSong
 }
 
 // PathIsPlaylist takes a path and returns true if it ends with an m3u
 // extension. Also returns false if there was an error with the regex.
 func PathIsPlaylist(path string) bool {
-	isPlaylist, err := regexp.MatchString(`^.+\.[mM]3[uU]$`, path)
+	ext := filepath.Ext(path)
+	isPlaylist, err := regexp.MatchString(`[mM]3[uU]`, ext)
 	return err == nil && isPlaylist
 }
 
+// GetPathForLocalFile returns a full file path with the given local path
+// relative to the music directory concatenated with a forward slash.
 func GetPathForLocalFile(localPath string) string {
-	return GetMusicDir() + "/" + localPath
+	return filepath.Join(GetMusicDir() + localPath)
 }
 
-// IsSafePath checks the path to make sure it is in the music directory. Returns
+// GetSafePath checks the path to make sure it is in the music directory. Returns
 // the cleaned path on success and a blank string on failure.
-func IsSafePath(path string) (string, error) {
+func GetSafePath(path string) (string, error) {
 	cleanedPath := filepath.Clean(path)
-	musicDir := GetMusicDir()
-	if !strings.HasPrefix(cleanedPath, musicDir) {
+	pathElements := filepath.SplitList(cleanedPath)
+	musicDirElements := filepath.SplitList(GetMusicDir())
+	if len(pathElements) < len(musicDirElements) {
 		return "", errors.New(viper.GetString("files.messages.non_music_dir_prefix_error"))
+	}
+	for i := 0; i < len(musicDirElements); i++ {
+		if pathElements[i] != musicDirElements[i] {
+			return "", errors.New(viper.GetString("files.messages.non_music_dir_prefix_error"))
+		}
 	}
 	return cleanedPath, nil
 }
 
+// StripMusicDirPath takes a path that begins with the music directory and
+// returns a path with the music directory stripped out. In other words, the
+// local file path. Returns a blank string and error on failuer or on non-safe
+// path.
 func StripMusicDirPath(path string) (string, error) {
-	cleanedPath := filepath.Clean(path)
-	musicDir := GetMusicDir()
-	if !strings.HasPrefix(cleanedPath, musicDir) {
-		return "", errors.New(viper.GetString("files.messages.non_music_dir_prefix_error"))
+	cleanedPath, err := GetSafePath(path)
+	if err != nil {
+		return "", err
 	}
-	return cleanedPath[len(musicDir):], nil
+	relPath, err := filepath.Rel(GetMusicDir(), cleanedPath)
+	if err != nil {
+		return "", err
+	}
+	return relPath, nil
 }
 
 func ReadMP3Duration(mp3Reader *id3.File) (time.Duration, error) {

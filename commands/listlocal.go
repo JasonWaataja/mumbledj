@@ -75,7 +75,6 @@ func NewSongInfo(path string) *SongInfo {
 	if err != nil {
 		return nil
 	}
-	fmt.Println("opened it")
 	defer reader.Close()
 	songInfo.SongName = reader.Title()
 	songInfo.Artist = reader.Artist()
@@ -126,7 +125,11 @@ func (playlist *Playlist) CreateInfo(indentation int) string {
 		for i := 0; i < indentation+1; i++ {
 			infoString += IndentationString
 		}
-		infoString += track.Title + "(" + time.Duration(track.Time).String() + ")" + LineBreakString
+		infoString += track.Title
+		if track.Time > 0 {
+			infoString += "(" + time.Duration(track.Time).String() + ")"
+		}
+		infoString += LineBreakString
 	}
 	return infoString
 }
@@ -140,7 +143,10 @@ func (songInfo *SongInfo) CreateInfo(indentation int) string {
 		infoString += IndentationString
 	}
 	infoString += songInfo.SongName + " " + songInfo.Artist
-	infoString += " (" + songInfo.Duration.String() + ")" + LineBreakString
+	if songInfo.Duration != 0 {
+		infoString += " (" + songInfo.Duration.String() + ")"
+	}
+	infoString += LineBreakString
 
 	return infoString
 }
@@ -158,8 +164,10 @@ func (songDir *SongDirectory) CreateInfo(indentation int) string {
 	}
 	infoString += songDir.Name + LineBreakString
 	for _, entry := range songDir.Entries {
+		fmt.Println("Creating info for entry in song directory")
 		infoString += entry.CreateInfo(indentation + 1)
 	}
+	fmt.Println("About to return info string")
 	return infoString
 }
 
@@ -168,6 +176,7 @@ func (songDir *SongDirectory) CreateInfo(indentation int) string {
 // WARNING: THE ERROR MAY REVEAL INFORMATION ABOUT THE SONG DIRECTORY LOCATION.
 // THIS SHOULD BE FIXED LATER.
 func (songDir *SongDirectory) ScanDirectory(path string) error {
+	fmt.Println("Scanning directory")
 	dirInfo, err := os.Stat(path)
 	if err != nil {
 		return err
@@ -180,6 +189,7 @@ func (songDir *SongDirectory) ScanDirectory(path string) error {
 		return err
 	}
 	for _, entry := range entries {
+		fmt.Println(entry.Name())
 		entryPath := path + "/" + entry.Name()
 		switch {
 		case entry.Mode().IsRegular():
@@ -197,9 +207,11 @@ func (songDir *SongDirectory) ScanDirectory(path string) error {
 		case entry.IsDir():
 			newDir := NewSongDirectory(entry.Name())
 			songDir.Entries = append(songDir.Entries, newDir)
-			go newDir.ScanDirectory(entryPath)
+			// go newDir.ScanDirectory(entryPath)
+			// newDir.ScanDirectory(entryPath)
 		}
 	}
+	fmt.Println("Got to end of scan directory")
 	return nil
 }
 
@@ -221,7 +233,7 @@ func (c *ListLocalCommand) Execute(user *gumble.User, args ...string) (string, b
 	localPath := strings.Join(args, " ")
 
 	path := bot.GetPathForLocalFile(localPath)
-	path, err := bot.IsSafePath(path)
+	path, err := bot.GetSafePath(path)
 
 	if err != nil {
 		return "", true, err
@@ -229,11 +241,14 @@ func (c *ListLocalCommand) Execute(user *gumble.User, args ...string) (string, b
 
 	songDir := NewSongDirectory("Music Directory")
 	err = songDir.ScanDirectory(path)
+	fmt.Println("Finished scanning music directory")
 
 	if err != nil {
 		return "", true, errors.New(viper.GetString("commands.listlocal.messages.scan_failure_error"))
 	}
 	infoString := songDir.CreateInfo(0)
+	fmt.Println("Created info")
+	fmt.Println("The info is", infoString)
 
 	return infoString, true, nil
 }

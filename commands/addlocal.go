@@ -54,24 +54,19 @@ func (c *AddLocalCommand) Execute(user *gumble.User, args ...string) (string, bo
 	if len(args) == 0 {
 		return "", true, errors.New(viper.GetString("commands.addlocal.messages.no_argument_error"))
 	}
-
 	// If arguments were split around spaces, put them back together
 	// separated by spaces.
 	localPath := strings.Join(args, " ")
 
 	path := bot.GetPathForLocalFile(localPath)
-	path, err := bot.IsSafePath(path)
-
+	path, err := bot.GetSafePath(path)
 	if err != nil {
 		return "", true, err
 	}
-
 	if _, err := os.Stat(path); err != nil {
 		return "", true, errors.New(viper.GetString("commands.addlocal.messages.no_matching_song_error"))
 	}
-
 	tracks := make([]interfaces.Track, 0)
-
 	if bot.PathIsSong(path) {
 		found := false
 		for _, service := range DJ.AvailableServices {
