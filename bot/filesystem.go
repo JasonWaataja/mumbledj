@@ -9,10 +9,12 @@ package bot
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	id3 "github.com/mikkyang/id3-go"
@@ -43,15 +45,39 @@ func PathIsPlaylist(path string) bool {
 // GetPathForLocalFile returns a full file path with the given local path
 // relative to the music directory concatenated with a forward slash.
 func GetPathForLocalFile(localPath string) string {
-	return filepath.Join(GetMusicDir() + localPath)
+	return filepath.Join(GetMusicDir(), localPath)
+}
+
+func GetPathElements(path string) []string {
+	elements := make([]string, 0)
+	path = filepath.Clean(path)
+	dir, file := filepath.Split(path)
+	dir = filepath.Clean(dir)
+	// This doesn't assume Microsoft Windows paths that could have a backslash instead.
+	for dir != "" && !strings.HasSuffix(dir, fmt.Sprintf("%c", filepath.Separator)) {
+		if len(file) > 0 {
+			elements = append(elements, file)
+		}
+		path = filepath.Clean(dir)
+		dir, file = filepath.Split(path)
+		dir = filepath.Clean(dir)
+	}
+	if dir != "" {
+		elements = append(elements, dir)
+	}
+	for i := 0; i < len(elements)/2; i++ {
+		opp := len(elements) - i - 1
+		elements[i], elements[opp] = elements[opp], elements[i]
+	}
+	return elements
 }
 
 // GetSafePath checks the path to make sure it is in the music directory. Returns
 // the cleaned path on success and a blank string on failure.
 func GetSafePath(path string) (string, error) {
 	cleanedPath := filepath.Clean(path)
-	pathElements := filepath.SplitList(cleanedPath)
-	musicDirElements := filepath.SplitList(GetMusicDir())
+	pathElements := GetPathElements(cleanedPath)
+	musicDirElements := GetPathElements(GetMusicDir())
 	if len(pathElements) < len(musicDirElements) {
 		return "", errors.New(viper.GetString("files.messages.non_music_dir_prefix_error"))
 	}

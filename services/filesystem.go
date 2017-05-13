@@ -160,7 +160,6 @@ func (fs *Filesystem) CreateTracksForLocalFile(localPath string, submitter *gumb
 			}
 			tracks = append(tracks, track)
 		}
-
 	}
 	return tracks, nil
 }
