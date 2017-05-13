@@ -10,6 +10,7 @@ package services
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -85,7 +86,7 @@ func (fs *Filesystem) CreateTrackForLocalFile(localPath string, submitter *gumbl
 		Author:         mp3Reader.Artist(),
 		Submitter:      submitter.Name,
 		Service:        fs.GetReadableName(),
-		Filename:       filepath.Base(path),
+		Filename:       localPath,
 		Duration:       duration,
 		PlaybackOffset: 0,
 	}
@@ -104,19 +105,19 @@ func (fs *Filesystem) CreateTrackForAbsFile(absPath string, submitter *gumble.Us
 	defer mp3Reader.Close()
 	// This function returns 0 on failure, which is the desired behavior.
 	duration, _ := bot.ReadMP3Duration(mp3Reader)
-	songID, err := bot.StripMusicDirPath(path)
+	filename, err := bot.StripMusicDirPath(path)
 	if err != nil {
-		songID = filepath.Base(path)
+		return nil, err
 	}
 	// Leaving out some fields for their zero values.
 	track := bot.Track{
 		Local:          true,
-		ID:             songID,
+		ID:             filename,
 		Title:          mp3Reader.Title(),
 		Author:         mp3Reader.Artist(),
 		Submitter:      submitter.Name,
 		Service:        fs.GetReadableName(),
-		Filename:       filepath.Base(path),
+		Filename:       filename,
 		Duration:       duration,
 		PlaybackOffset: 0,
 	}
@@ -142,24 +143,16 @@ func (fs *Filesystem) CreateTracksForLocalFile(localPath string, submitter *gumb
 	tracks := make([]interfaces.Track, 0)
 	for scanner.Scan() {
 		text := scanner.Text()
-		if len(text) == 0 || strings.HasPrefix(text, "#") {
+		if len(text) == 0 || strings.HasPrefix(text, "#") || filepath.IsAbs(text) {
 			continue
 		}
 		// This conditional doesn't assume that it could be a url. Just
 		// ignoring that option for now.
-		if filepath.IsAbs(text) {
-			track, err := fs.CreateTrackForAbsFile(text, submitter)
-			if err != nil {
-				return nil, err
-			}
-			tracks = append(tracks, track)
-		} else {
-			track, err := fs.CreateTrackForLocalFile(text, submitter)
-			if err != nil {
-				return nil, err
-			}
-			tracks = append(tracks, track)
+		track, err := fs.CreateTrackForLocalFile(text, submitter)
+		if err != nil {
+			return nil, err
 		}
+		tracks = append(tracks, track)
 	}
 	return tracks, nil
 }

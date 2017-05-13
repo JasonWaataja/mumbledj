@@ -275,6 +275,7 @@ func (q *Queue) PlayCurrent() error {
 	} else {
 		filepath = os.ExpandEnv(viper.GetString("cache.directory") + "/" + currentTrack.GetFilename())
 	}
+	fmt.Println(filepath)
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
 		if currentTrack.IsLocal() {
 			return errors.New(viper.GetString("files.messages.no_file_found_error"))
@@ -307,8 +308,13 @@ func (q *Queue) PlayCurrent() error {
 					<td align="center">Added by %s</td>
 				</tr>
 			`
-		message = fmt.Sprintf(message, currentTrack.GetThumbnailURL(), currentTrack.GetURL(),
-			currentTrack.GetTitle(), currentTrack.GetDuration().String(), currentTrack.GetSubmitter())
+		if currentTrack.GetThumbnailURL() != "" {
+			message = fmt.Sprintf(message, currentTrack.GetThumbnailURL(), currentTrack.GetURL(),
+				currentTrack.GetTitle(), currentTrack.GetDuration().String(), currentTrack.GetSubmitter())
+		} else {
+			message = fmt.Sprintf(message, currentTrack.GetURL(),
+				currentTrack.GetTitle(), currentTrack.GetDuration().String(), currentTrack.GetSubmitter())
+		}
 		if currentTrack.GetPlaylist() != nil {
 			message = fmt.Sprintf(message+`<tr><td align="center">From playlist "%s"</td></tr>`, currentTrack.GetPlaylist().GetTitle())
 		}

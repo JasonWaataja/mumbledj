@@ -90,11 +90,9 @@ func (c *AddLocalCommand) Execute(user *gumble.User, args ...string) (string, bo
 			if ok {
 				newTracks, err := fs.CreateTracksForLocalFile(localPath, user)
 				if err != nil {
-					for _, track := range newTracks {
-						tracks = append(tracks, track)
-					}
 					return "", true, err
 				}
+				tracks = append(tracks, newTracks...)
 			}
 		}
 	} else {
