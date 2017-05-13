@@ -293,12 +293,14 @@ func (q *Queue) PlayCurrent() error {
 	}
 
 	if viper.GetBool("queue.announce_new_tracks") {
-		message :=
-			`<table>
-			 	<tr>
-					<td align="center"><img src="%s" width=150 /></td>
-				</tr>
-				<tr>
+		message := "<table>\n"
+		if currentTrack.GetThumbnailURL() != "" {
+			message += `	<tr>
+						<td align="center"><img src="%s" width=150 /></td>
+					</tr>
+				`
+		}
+		message += `	<tr>
 					<td align="center"><b><a href="%s">%s</a> (%s)</b></td>
 				</tr>
 				<tr>

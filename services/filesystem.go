@@ -36,10 +36,10 @@ func NewFilesystemService() *Filesystem {
 			ReadableName: "Filesystem",
 			Format:       "bestaudio",
 			TrackRegex: []*regexp.Regexp{
-				regexp.MustCompile(`.*`),
+				regexp.MustCompile(`$^`),
 			},
 			PlaylistRegex: []*regexp.Regexp{
-				regexp.MustCompile(`.*`),
+				regexp.MustCompile(`$^`),
 			},
 		},
 	}

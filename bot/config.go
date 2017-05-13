@@ -69,6 +69,8 @@ func SetDefaultConfig() {
 	viper.SetDefault("files.music_directory", "~/Music")
 	viper.SetDefault("files.messages.no_file_found_error", "No matching file found in music directory.")
 	viper.SetDefault("files.messages.non_music_dir_prefix_error", "Attempting to use file outside of music directory.")
+	viper.SetDefault("files.messages.non_playlist_error", "The requested file is not a .m3u playlist.")
+	viper.SetDefault("file_open_error", "The file could not be opened.")
 
 	// Command defaults.
 	viper.SetDefault("commands.prefix", "!")
