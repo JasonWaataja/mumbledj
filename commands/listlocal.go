@@ -70,6 +70,60 @@ func createInfoForFile(path, relPath string, info os.FileInfo) (string, bool) {
 	return "(Directory) <b>" + relPath + "</b>", true
 }
 
+func createMessageForDir(path, relPath string) (string, error) {
+	dirInfo, err := os.Stat(path)
+	if err != nil {
+		return "", errors.New(viper.GetString("commands.listlocal.messages.read_failure_error"))
+	}
+	if !dirInfo.IsDir() {
+		return "", errors.New(viper.GetString("commands.listlocal.messages.scan_non_directory_error"))
+	}
+	entries, err := ioutil.ReadDir(path)
+	if err != nil {
+		return "", errors.New(viper.GetString("commands.listlocal.messages.read_failure_error"))
+	}
+	message := "<h3>"
+	if relPath == "." {
+		message += "Music"
+	} else {
+		message += relPath
+	}
+	message += "</h3>\n"
+	message += "<ul>\n"
+	for _, entry := range entries {
+		entryPath := filepath.Join(path, entry.Name())
+		entryRelPath := filepath.Join(relPath, entry.Name())
+		entryMessage, ok := createInfoForFile(entryPath, entryRelPath, entry)
+		if ok && len(entryMessage) > 0 {
+			message += "<li>" + entryMessage + "</li>\n"
+		}
+	}
+	message += "</ul>"
+	return message, nil
+}
+
+func createMessageForPlaylist(path, relPath string) (string, error) {
+	tracks, err := bot.ReadPlaylistFile(path)
+	if err != nil {
+		return "", err
+	}
+	message := "<h3>" + relPath + "</h3>"
+	message += "<ol>\n"
+	for _, track := range tracks {
+		fullPath := bot.GetPathForLocalFile(track)
+		info, err := os.Stat(fullPath)
+		if err != nil {
+			continue
+		}
+		trackMessage, ok := createInfoForFile(bot.GetPathForLocalFile(track), track, info)
+		if ok {
+			message += "<li>" + trackMessage + "</li>\n"
+		}
+	}
+	message += "</ol>"
+	return message, nil
+}
+
 // Execute executes the command with the given user and arguments.
 // Return value descriptions:
 //    string: A message to be returned to the user upon successful execution.
@@ -93,26 +147,16 @@ func (c *ListLocalCommand) Execute(user *gumble.User, args ...string) (string, b
 	if err != nil {
 		return "", true, errors.New(viper.GetString("commands.listlocal.messages.read_failure_error"))
 	}
-	dirInfo, err := os.Stat(path)
-	if err != nil {
-		return "", true, errors.New(viper.GetString("commands.listlocal.messages.read_failure_error"))
-	}
-	if !dirInfo.IsDir() {
-		return "", true, errors.New(viper.GetString("commands.listlocal.messages.scan_non_directory_error"))
-	}
-	entries, err := ioutil.ReadDir(path)
-	if err != nil {
-		return "", true, errors.New(viper.GetString("commands.listlocal.messages.read_failure_error"))
-	}
-	message := "<ul>\n"
-	for _, entry := range entries {
-		entryPath := filepath.Join(path, entry.Name())
-		entryRelPath := filepath.Join(relPath, entry.Name())
-		entryMessage, ok := createInfoForFile(entryPath, entryRelPath, entry)
-		if ok && len(entryMessage) > 0 {
-			message += "<li>" + entryMessage + "</li>\n"
+	if bot.PathIsPlaylist(path) {
+		message, err := createMessageForPlaylist(path, relPath)
+		if err != nil {
+			return "", true, errors.New(viper.GetString("commands.listlocal.messages.read_failure_error"))
 		}
+		return message, true, nil
 	}
-	message += "</ul>"
+	message, err := createMessageForDir(path, relPath)
+	if err != nil {
+		return "", true, errors.New(viper.GetString("commands.listlocal.messages.read_failure_error"))
+	}
 	return message, true, nil
 }
