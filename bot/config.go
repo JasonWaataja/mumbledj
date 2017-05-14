@@ -144,8 +144,9 @@ func SetDefaultConfig() {
 	viper.SetDefault("commands.listlocal.aliases", []string{"listlocal, ll"})
 	viper.SetDefault("commands.listlocal.is_admin", false)
 	viper.SetDefault("commadns.listlocal.description", "Lists available songs on the local filesystem.")
-	viper.SetDefault("commands.listlocal.messages.scan_non_directory_error", "Attemping to scan non-directory for entries")
+	viper.SetDefault("read_failure_error", "Failed to read from given file or directory.")
 	viper.SetDefault("commands.listlocal.messages.scan_failure_error", "Failed to scan directory")
+	viper.SetDefault("commands.listlocal.messages.scan_non_directory_error", "Attemping to scan non-directory for entries")
 
 	viper.SetDefault("commands.listtracks.aliases", []string{"listtracks", "listsongs", "list", "l"})
 	viper.SetDefault("commands.listtracks.is_admin", false)
