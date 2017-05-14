@@ -10,6 +10,7 @@ package bot
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -17,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jamesnetherton/m3u"
 	id3 "github.com/mikkyang/id3-go"
 	"github.com/spf13/viper"
 )
@@ -115,4 +117,35 @@ func ReadMP3Duration(mp3Reader *id3.File) (time.Duration, error) {
 		return 0, err
 	}
 	return time.Duration(durationMilliseconds * 1000), nil
+}
+
+// ReadPlaylistFile takes a full path and parses the contents for a list of
+// playlable files. In order to preserve the security of the music directory,
+// only local paths that end up inside the music directory are listed. All other
+// files are discarded. Returns the list of files on success, nil and an error
+// otherwise.
+func ReadPlaylistFile(path string) ([]string, error) {
+	playlist, err := m3u.Parse(path)
+	if err != nil {
+		return nil, err
+	}
+	localPaths := make([]string, 0)
+	for _, track := range playlist.Tracks {
+		path := track.URI
+		if filepath.IsAbs(path) {
+			continue
+		}
+		address, err := url.Parse(path)
+		// Ignore uris that are not just local paths.
+		if err == nil && address.Scheme == "" {
+			cleanedPath, err := GetSafePath(GetPathForLocalFile(address.Path))
+			if err == nil && PathIsSong(cleanedPath) {
+				localPath, err := StripMusicDirPath(cleanedPath)
+				if err == nil {
+					localPaths = append(localPaths, localPath)
+				}
+			}
+		}
+	}
+	return localPaths, nil
 }

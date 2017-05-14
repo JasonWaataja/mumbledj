@@ -275,7 +275,6 @@ func (q *Queue) PlayCurrent() error {
 	} else {
 		filepath = os.ExpandEnv(viper.GetString("cache.directory") + "/" + currentTrack.GetFilename())
 	}
-	fmt.Println(filepath)
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
 		if currentTrack.IsLocal() {
 			return errors.New(viper.GetString("files.messages.no_file_found_error"))
