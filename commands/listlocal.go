@@ -9,18 +9,15 @@ package commands
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/layeh/gumble/gumble"
 	"github.com/matthieugrieger/mumbledj/bot"
 	id3 "github.com/mikkyang/id3-go"
 	"github.com/spf13/viper"
-	"github.com/ushis/m3u"
 )
 
 // IndentationString is the character used to indent string in CreateInfo. It is
@@ -52,167 +49,25 @@ func (c *ListLocalCommand) IsAdminCommand() bool {
 	return viper.GetBool("commands.listlocal.is_admin")
 }
 
-// CreateInfoer is a type that can create information for itself. It is expected
-// to be indented with the IndentationString string and have an extra
-// indentation at the end represented with LineBreakString.
-type CreateInfoer interface {
-	CreateInfo(indentation int) string
-}
-
-// SongInfo represents the basic inforamtion for an MP3 file that is used to
-// print information on the song.
-type SongInfo struct {
-	SongName string
-	Artist   string
-	Duration time.Duration
-}
-
-// NewSongInfo creates an SongInfo for the given path. Returns a new SongInfo on
-// success and nil on failure.
-func NewSongInfo(path string) *SongInfo {
-	var songInfo SongInfo
-	reader, err := id3.Open(path)
-	if err != nil {
-		return nil
-	}
-	defer reader.Close()
-	songInfo.SongName = reader.Title()
-	songInfo.Artist = reader.Artist()
-	songInfo.Duration, _ = bot.ReadMP3Duration(reader)
-	return &songInfo
-}
-
-// SongDirectory represents the information on a directory that is used to print
-// information about its contents. It does not know its path, scanning specific
-// paths is left to the user.
-type SongDirectory struct {
-	Name    string
-	Entries []CreateInfoer
-}
-
-// NewSongDirectory creates a new SongDirectory with the given name.
-func NewSongDirectory(name string) *SongDirectory {
-	var songDir SongDirectory
-	songDir.Name = name
-	return &songDir
-}
-
-type Playlist struct {
-	*m3u.Playlist
-	Name string
-}
-
-func NewPlaylist(path string) *Playlist {
-	reader, err := os.Open(path)
-	if err != nil {
-		return nil
-	}
-	playlist, err := m3u.Parse(reader)
-	if err != nil {
-		return nil
-	}
-	name := filepath.Base(path)
-	return &Playlist{&playlist, name}
-}
-
-func (playlist *Playlist) CreateInfo(indentation int) string {
-	var infoString string
-	for i := 0; i < indentation; i++ {
-		infoString += IndentationString
-	}
-	infoString += playlist.Name + LineBreakString
-	for _, track := range *playlist.Playlist {
-		for i := 0; i < indentation+1; i++ {
-			infoString += IndentationString
-		}
-		infoString += track.Title
-		if track.Time > 0 {
-			infoString += "(" + time.Duration(track.Time).String() + ")"
-		}
-		infoString += LineBreakString
-	}
-	return infoString
-}
-
-// CreateInfo returns a string representing songInfo. It contains the title,
-// artist, and duration of the song. This string ends with a newline character.
-// The string is indented with one tab character indentation times.
-func (songInfo *SongInfo) CreateInfo(indentation int) string {
-	var infoString string
-	for i := 0; i < indentation; i++ {
-		infoString += IndentationString
-	}
-	infoString += songInfo.SongName + " " + songInfo.Artist
-	if songInfo.Duration != 0 {
-		infoString += " (" + songInfo.Duration.String() + ")"
-	}
-	infoString += LineBreakString
-
-	return infoString
-}
-
-// CreateInfo returns a string representing songDir. It incorporates the name of
-// the directory and lists its contents with an additional indentation. The
-// string is indented with one tab character indentation times.
-//
-// WARNING: THE ERROR MAY REVEAL INFORMATION ABOUT THE SONG DIRECTORY LOCATION.
-// THIS SHOULD BE FIXED LATER.
-func (songDir *SongDirectory) CreateInfo(indentation int) string {
-	var infoString string
-	for i := 0; i < indentation; i++ {
-		infoString += IndentationString
-	}
-	infoString += songDir.Name + LineBreakString
-	for _, entry := range songDir.Entries {
-		fmt.Println("Creating info for entry in song directory")
-		infoString += entry.CreateInfo(indentation + 1)
-	}
-	fmt.Println("About to return info string")
-	return infoString
-}
-
-// ScanDirectory scans the given path and appends its contents to the entries of songDir.
-//
-// WARNING: THE ERROR MAY REVEAL INFORMATION ABOUT THE SONG DIRECTORY LOCATION.
-// THIS SHOULD BE FIXED LATER.
-func (songDir *SongDirectory) ScanDirectory(path string) error {
-	fmt.Println("Scanning directory")
-	dirInfo, err := os.Stat(path)
-	if err != nil {
-		return err
-	}
-	if !dirInfo.IsDir() {
-		return errors.New(viper.GetString("commands.listlocal.messages.scan_non_directory_error"))
-	}
-	entries, err := ioutil.ReadDir(path)
-	if err != nil {
-		return err
-	}
-	for _, entry := range entries {
-		fmt.Println(entry.Name())
-		entryPath := path + "/" + entry.Name()
-		switch {
-		case entry.Mode().IsRegular():
-			if bot.PathIsSong(entryPath) {
-				songInfo := NewSongInfo(entryPath)
-				if songInfo != nil {
-					songDir.Entries = append(songDir.Entries, songInfo)
-				} else if bot.PathIsPlaylist(entryPath) {
-					playlist := NewPlaylist(entryPath)
-					if playlist != nil {
-						songDir.Entries = append(songDir.Entries, playlist)
-					}
-				}
+// createInfoForFile creates a small piece of information for the given path.
+// The second return value indicates whether it should be displayed.
+func createInfoForFile(path, relPath string, info os.FileInfo) (string, bool) {
+	if info.Mode().IsRegular() {
+		if bot.PathIsSong(path) {
+			reader, err := id3.Open(path)
+			if err != nil {
+				return "", false
 			}
-		case entry.IsDir():
-			newDir := NewSongDirectory(entry.Name())
-			songDir.Entries = append(songDir.Entries, newDir)
-			// go newDir.ScanDirectory(entryPath)
-			// newDir.ScanDirectory(entryPath)
+			defer reader.Close()
+			duration, _ := bot.ReadMP3Duration(reader)
+			return "<b>" + relPath + "</b> " + reader.Title() +
+				", " + reader.Artist() + " (" + duration.String(), true
+		} else if bot.PathIsPlaylist(path) {
+			return "(Playlist) <b>" + relPath + "</b>", true
 		}
+		return "", false
 	}
-	fmt.Println("Got to end of scan directory")
-	return nil
+	return "(Directory) <b>" + relPath + "</b>", true
 }
 
 // Execute executes the command with the given user and arguments.
@@ -225,30 +80,39 @@ func (songDir *SongDirectory) ScanDirectory(path string) error {
 // Example return statement:
 //    return "This is a private message!", true, nil
 func (c *ListLocalCommand) Execute(user *gumble.User, args ...string) (string, bool, error) {
-	// TODO: Fix the fact it sometimes directly returns the error. This may
-	// reveal to those sending messages information about the filesystem.
-
-	// If arguments were split around spaces, put them back together
-	// separated by spaces.
-	localPath := strings.Join(args, " ")
-
-	path := bot.GetPathForLocalFile(localPath)
-	path, err := bot.GetSafePath(path)
-
-	if err != nil {
-		return "", true, err
+	path := bot.GetMusicDir()
+	if len(args) > 0 {
+		argPath := strings.Join(args, " ")
+		argPath, err := bot.GetSafePath(bot.GetPathForLocalFile(argPath))
+		if err != nil {
+			return "", true, errors.New(viper.GetString("commands.listlocal.messages.read_failure_error"))
+		}
+		path = argPath
 	}
-
-	songDir := NewSongDirectory("Music Directory")
-	err = songDir.ScanDirectory(path)
-	fmt.Println("Finished scanning music directory")
-
+	relPath, err := bot.StripMusicDirPath(path)
 	if err != nil {
-		return "", true, errors.New(viper.GetString("commands.listlocal.messages.scan_failure_error"))
+		return "", true, errors.New(viper.GetString("commands.listlocal.messages.read_failure_error"))
 	}
-	infoString := songDir.CreateInfo(0)
-	fmt.Println("Created info")
-	fmt.Println("The info is", infoString)
-
-	return infoString, true, nil
+	dirInfo, err := os.Stat(path)
+	if err != nil {
+		return "", true, errors.New(viper.GetString("commands.listlocal.messages.read_failure_error"))
+	}
+	if !dirInfo.IsDir() {
+		return "", true, errors.New(viper.GetString("commands.listlocal.messages.scan_non_directory_error"))
+	}
+	entries, err := ioutil.ReadDir(path)
+	if err != nil {
+		return "", true, errors.New(viper.GetString("commands.listlocal.messages.read_failure_error"))
+	}
+	message := "<ul>\n"
+	for _, entry := range entries {
+		entryPath := filepath.Join(path, entry.Name())
+		entryRelPath := filepath.Join(relPath, entry.Name())
+		entryMessage, ok := createInfoForFile(entryPath, entryRelPath, entry)
+		if ok && len(entryMessage) > 0 {
+			message += "<li>" + entryMessage + "</li>\n"
+		}
+	}
+	message += "</ul>"
+	return message, true, nil
 }

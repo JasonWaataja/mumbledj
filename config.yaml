@@ -278,8 +278,9 @@ commands:
         is_admin: false
         description: "Lists available songs on the local filesystem."
         messages:
-            scan_non_directory_error: "Attemping to scan non-directory for entries"
-            scan_failure_error: "Failed to scan directory"
+            read_failure_error: "Failed to read from given file or directory."
+            scan_failure_error: "Failed to scan directory."
+            scan_non_directory_error: "Attemping to scan non-directory for entries."
 
     listtracks:
         aliases:

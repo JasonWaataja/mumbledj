@@ -10,7 +10,6 @@ package services
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
