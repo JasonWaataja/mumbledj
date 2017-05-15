@@ -34,7 +34,7 @@ func SetDefaultConfig() {
 	viper.SetDefault("queue.max_tracks_per_playlist", 50)
 	viper.SetDefault("queue.automatic_shuffle_on", false)
 	viper.SetDefault("queue.announce_new_tracks", true)
-	viper.SetDefault("queue.loop_default", true)
+	viper.SetDefault("queue.loop_default", false)
 
 	// Connection defaults.
 	viper.SetDefault("connection.address", "127.0.0.1")
