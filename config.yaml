@@ -48,7 +48,7 @@ queue:
     announce_new_tracks: true
 
     # Loop to beginning of queue when finished.
-    loop_default: true
+    loop_default: false
 
 
 connection:
