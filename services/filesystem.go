@@ -1,7 +1,7 @@
 /*
  * MumbleDJ
  * By Matthieu Grieger
- * services/yournewservice.go
+ * services/filesystem.go
  * Copyright (c) 2016 Matthieu Grieger (MIT License)
  */
 
@@ -9,17 +9,17 @@ package services
 
 import (
 	"bufio"
-	"fmt"
+	"errors"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
-	// id3 "github.com/ascherkus/go-id3"
 	"github.com/layeh/gumble/gumble"
 	"github.com/matthieugrieger/mumbledj/bot"
 	"github.com/matthieugrieger/mumbledj/interfaces"
 	id3 "github.com/mikkyang/id3-go"
+	"github.com/spf13/viper"
 )
 
 // Filesystem is a services that reads files from your local filesystem. It
@@ -36,11 +36,10 @@ func NewFilesystemService() *Filesystem {
 			ReadableName: "Filesystem",
 			Format:       "bestaudio",
 			TrackRegex: []*regexp.Regexp{
-				regexp.MustCompile(`.*`),
-				// regexp.MustCompile(`.*`),
+				regexp.MustCompile(`$^`),
 			},
 			PlaylistRegex: []*regexp.Regexp{
-				regexp.MustCompile(`file:\/\/\/.*\.[mM]3[uU]`),
+				regexp.MustCompile(`$^`),
 			},
 		},
 	}
@@ -59,60 +58,100 @@ func (fs *Filesystem) CheckAPIKey() error {
 // tracks associated with the URL. An error is returned
 // if any error occurs during the API call.
 func (fs *Filesystem) GetTracks(url string, submitter *gumble.User) ([]interfaces.Track, error) {
-	fmt.Println(url)
 	tracks := make([]interfaces.Track, 0)
-	if fs.isTrack(url) {
-		fmt.Println("Creating Track")
-		path, err := bot.PathForFileURL(url)
-		if err != nil {
-			return tracks, err
-		}
-		track, err := fs.createTrackForFile(path, submitter)
-		if err == nil {
-			tracks = append(tracks, track)
-		} else {
-			return tracks, err
-		}
-	} else if fs.isPlaylist(url) {
-		path, err := bot.PathForFileURL(url)
-		if err != nil {
-			return tracks, err
-		}
-		reader, err := os.Open(path)
-		if err != nil {
-			return tracks, err
-		}
-		scanner := bufio.NewScanner(reader)
-		for scanner.Scan() {
-			line := scanner.Text()
-			if len(line) > 0 && !strings.HasPrefix(line, "#") {
-				track, err := fs.createTrackForFile(line, submitter)
-				if err != nil {
-					return tracks, err
-				}
-				tracks = append(tracks, track)
-			}
-		}
-	}
 	return tracks, nil
 }
 
-// createTrackForFile extracts the info from an mp3 file. Returns a tracks on
-// success and false on failure.
-func (fs *Filesystem) createTrackForFile(path string, submitter *gumble.User) (*bot.Track, error) {
-	mp3file, err := id3.Open(path)
-	defer mp3file.Close()
+// CreateTrackForPath creates a bot.Track for the given localPath which is
+// interpreted relative to the music directory. Returns the track on success and
+// nil and an error on failure.
+func (fs *Filesystem) CreateTrackForLocalFile(localPath string, submitter *gumble.User) (*bot.Track, error) {
+	path, err := bot.GetSafePath(bot.GetPathForLocalFile(localPath))
 	if err != nil {
 		return nil, err
 	}
-	basename := filepath.Base(path)
+	mp3Reader, err := id3.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer mp3Reader.Close()
+	// This function returns 0 on failure, which is the desired behavior.
+	duration, _ := bot.ReadMP3Duration(mp3Reader)
+	// Leave out some fields for their zero values.
 	track := bot.Track{
-		ID:        basename,
-		URL:       "file://" + path,
-		Title:     mp3file.Artist(),
-		Submitter: submitter.Name,
-		Service:   fs.GetReadableName(),
-		Filename:  basename,
+		Local:          true,
+		ID:             localPath,
+		Title:          mp3Reader.Title(),
+		Author:         mp3Reader.Artist(),
+		Submitter:      submitter.Name,
+		Service:        fs.GetReadableName(),
+		Filename:       localPath,
+		Duration:       duration,
+		PlaybackOffset: 0,
 	}
 	return &track, nil
+}
+
+func (fs *Filesystem) CreateTrackForAbsFile(absPath string, submitter *gumble.User) (*bot.Track, error) {
+	path, err := bot.GetSafePath(absPath)
+	if err != nil {
+		return nil, err
+	}
+	mp3Reader, err := id3.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer mp3Reader.Close()
+	// This function returns 0 on failure, which is the desired behavior.
+	duration, _ := bot.ReadMP3Duration(mp3Reader)
+	filename, err := bot.StripMusicDirPath(path)
+	if err != nil {
+		return nil, err
+	}
+	// Leaving out some fields for their zero values.
+	track := bot.Track{
+		Local:          true,
+		ID:             filename,
+		Title:          mp3Reader.Title(),
+		Author:         mp3Reader.Artist(),
+		Submitter:      submitter.Name,
+		Service:        fs.GetReadableName(),
+		Filename:       filename,
+		Duration:       duration,
+		PlaybackOffset: 0,
+	}
+	return &track, nil
+}
+
+// CreateTracksForLocalFile scans the localPath and creates a corresponding list
+// of tracks, assuming that the file is a playlist file.
+func (fs *Filesystem) CreateTracksForLocalFile(localPath string, submitter *gumble.User) ([]interfaces.Track, error) {
+	if !bot.PathIsPlaylist(localPath) {
+		return nil, errors.New(viper.GetString("files.messages.non_playlist_error"))
+	}
+	fullPath, err := bot.GetSafePath(bot.GetPathForLocalFile(localPath))
+	if err != nil {
+		return nil, err
+	}
+	reader, err := os.Open(fullPath)
+	if err != nil {
+		return nil, errors.New(viper.GetString("files.messages.file_open_error"))
+	}
+	defer reader.Close()
+	scanner := bufio.NewScanner(reader)
+	tracks := make([]interfaces.Track, 0)
+	for scanner.Scan() {
+		text := scanner.Text()
+		if len(text) == 0 || strings.HasPrefix(text, "#") || filepath.IsAbs(text) {
+			continue
+		}
+		// This conditional doesn't assume that it could be a url. Just
+		// ignoring that option for now.
+		track, err := fs.CreateTrackForLocalFile(text, submitter)
+		if err != nil {
+			return nil, err
+		}
+		tracks = append(tracks, track)
+	}
+	return tracks, nil
 }

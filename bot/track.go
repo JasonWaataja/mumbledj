@@ -15,6 +15,7 @@ import (
 
 // Track stores all metadata related to an audio track.
 type Track struct {
+	Local          bool
 	ID             string
 	URL            string
 	Title          string
@@ -27,6 +28,11 @@ type Track struct {
 	Duration       time.Duration
 	PlaybackOffset time.Duration
 	Playlist       interfaces.Playlist
+}
+
+// IsLocal returns whether or not the track is on the local filesystem.
+func (t Track) IsLocal() bool {
+	return t.Local
 }
 
 // GetID returns the ID of the track.

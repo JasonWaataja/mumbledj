@@ -269,22 +269,18 @@ func (q *Queue) SkipPlaylist() {
 // PlayCurrent creates a new audio stream and begins playing the current track.
 func (q *Queue) PlayCurrent() error {
 	currentTrack := q.GetTrack(0)
-	filepath := os.ExpandEnv(viper.GetString("cache.directory") + "/" + currentTrack.GetFilename())
+	var filepath string
+	if currentTrack.IsLocal() {
+		filepath = GetPathForLocalFile(currentTrack.GetFilename())
+	} else {
+		filepath = os.ExpandEnv(viper.GetString("cache.directory") + "/" + currentTrack.GetFilename())
+	}
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
-		fmt.Println(currentTrack.GetService())
-		switch currentTrack.GetService() {
-		case "YouTube":
-			if err := DJ.YouTubeDL.Download(q.GetTrack(0)); err != nil {
-				return err
-			}
-		case "Filesystem":
-			path, err := PathForFileURL(currentTrack.GetURL())
-			if err != nil {
-				return err
-			}
-			if err := CacheMP3File(path); err != nil {
-				return err
-			}
+		if currentTrack.IsLocal() {
+			return errors.New(viper.GetString("files.messages.no_file_found_error"))
+		}
+		if err := DJ.YouTubeDL.Download(q.GetTrack(0)); err != nil {
+			return err
 		}
 	}
 	source := gumbleffmpeg.SourceFile(filepath)
@@ -297,20 +293,27 @@ func (q *Queue) PlayCurrent() error {
 	}
 
 	if viper.GetBool("queue.announce_new_tracks") {
-		message :=
-			`<table>
-			 	<tr>
-					<td align="center"><img src="%s" width=150 /></td>
-				</tr>
-				<tr>
+		message := "<table>\n"
+		if currentTrack.GetThumbnailURL() != "" {
+			message += `	<tr>
+						<td align="center"><img src="%s" width=150 /></td>
+					</tr>
+				`
+		}
+		message += `	<tr>
 					<td align="center"><b><a href="%s">%s</a> (%s)</b></td>
 				</tr>
 				<tr>
 					<td align="center">Added by %s</td>
 				</tr>
 			`
-		message = fmt.Sprintf(message, currentTrack.GetThumbnailURL(), currentTrack.GetURL(),
-			currentTrack.GetTitle(), currentTrack.GetDuration().String(), currentTrack.GetSubmitter())
+		if currentTrack.GetThumbnailURL() != "" {
+			message = fmt.Sprintf(message, currentTrack.GetThumbnailURL(), currentTrack.GetURL(),
+				currentTrack.GetTitle(), currentTrack.GetDuration().String(), currentTrack.GetSubmitter())
+		} else {
+			message = fmt.Sprintf(message, currentTrack.GetURL(),
+				currentTrack.GetTitle(), currentTrack.GetDuration().String(), currentTrack.GetSubmitter())
+		}
 		if currentTrack.GetPlaylist() != nil {
 			message = fmt.Sprintf(message+`<tr><td align="center">From playlist "%s"</td></tr>`, currentTrack.GetPlaylist().GetTitle())
 		}
@@ -362,8 +365,11 @@ func (q *Queue) StopCurrent() error {
 
 func (q *Queue) playIfNeeded() error {
 	if DJ.AudioStream == nil && q.Length() > 0 {
-		if err := DJ.YouTubeDL.Download(q.GetTrack(0)); err != nil {
-			return err
+		track := q.GetTrack(0)
+		if !track.IsLocal() {
+			if err := DJ.YouTubeDL.Download(track); err != nil {
+				return err
+			}
 		}
 		if err := q.PlayCurrent(); err != nil {
 			return err

@@ -65,6 +65,13 @@ func SetDefaultConfig() {
 	viper.SetDefault("admins.enabled", true)
 	viper.SetDefault("admins.names", []string{"SuperUser"})
 
+	// Files defaults.
+	viper.SetDefault("files.music_directory", "~/Music")
+	viper.SetDefault("files.messages.no_file_found_error", "No matching file found in music directory.")
+	viper.SetDefault("files.messages.non_music_dir_prefix_error", "Attempting to use file outside of music directory.")
+	viper.SetDefault("files.messages.non_playlist_error", "The requested file is not a .m3u playlist.")
+	viper.SetDefault("file_open_error", "The file could not be opened.")
+
 	// Command defaults.
 	viper.SetDefault("commands.prefix", "!")
 	viper.SetDefault("commands.common_messages.no_tracks_error", "There are no tracks in the queue.")
@@ -79,6 +86,19 @@ func SetDefaultConfig() {
 	viper.SetDefault("commands.add.messages.one_track_added", "<b>%s</b> added <b>1</b> track to the queue:<br><i>%s</i> from %s")
 	viper.SetDefault("commands.add.messages.many_tracks_added", "<b>%s</b> added <b>%d</b> tracks to the queue.")
 	viper.SetDefault("commands.add.messages.num_tracks_too_long", "<br><b>%d</b> tracks could not be added due to error or because they are too long.")
+
+	viper.SetDefault("commands.addlocal.aliases", []string{"addlocal", "al"})
+	viper.SetDefault("commands.addlocal.is_admin", true)
+	viper.SetDefault("commands.addlocal.description", "Adds a track or playlist from the local filesystem to the queue")
+	viper.SetDefault("commands.addlocal.messages.no_argument_error", "No argument provided to addlocal")
+	viper.SetDefault("commands.addlocal.messages.no_matching_song_error", "No matching song")
+	viper.SetDefault("commands.addlocal.messages.no_filesystem_service_error", "No Filesystem service available")
+	viper.SetDefault("commands.addlocal.messages.unrecognized_type_error", "Filetype does not match mp3 or m3u")
+	viper.SetDefault("commands.addlocal.messages.no_valid_tracks_error", "No valid tracks were found for the provided files")
+	viper.SetDefault("commands.addlocal.messages.tracks_too_long_error", "Your track(s) were either too long or an error occurred while processing them. No track(s) have been added.")
+	viper.SetDefault("commands.addlocal.messages.one_track_added", "<b>%s</b> added <b>1</b> track to the queue:<br><i>%s</i> from %s")
+	viper.SetDefault("commands.addlocal.messages.many_tracks_added", "<b>%s</b> added <b>%d</b> tracks to the queue.")
+	viper.SetDefault("commands.addlocal.messages.num_tracks_too_long", "<br><b>%d</b> tracks could not be added due to error or because they are too long.")
 
 	viper.SetDefault("commands.addnext.aliases", []string{"addnext", "an"})
 	viper.SetDefault("commands.addnext.is_admin", true)
@@ -120,6 +140,13 @@ func SetDefaultConfig() {
 	viper.SetDefault("commands.kill.aliases", []string{"kill", "k"})
 	viper.SetDefault("commands.kill.is_admin", true)
 	viper.SetDefault("commands.kill.description", "Stops the bot and cleans its cache directory.")
+
+	viper.SetDefault("commands.listlocal.aliases", []string{"listlocal, ll"})
+	viper.SetDefault("commands.listlocal.is_admin", false)
+	viper.SetDefault("commadns.listlocal.description", "Lists available songs on the local filesystem.")
+	viper.SetDefault("read_failure_error", "Failed to read from given file or directory.")
+	viper.SetDefault("commands.listlocal.messages.scan_failure_error", "Failed to scan directory")
+	viper.SetDefault("commands.listlocal.messages.scan_non_directory_error", "Attemping to scan non-directory for entries")
 
 	viper.SetDefault("commands.listtracks.aliases", []string{"listtracks", "listsongs", "list", "l"})
 	viper.SetDefault("commands.listtracks.is_admin", false)
