@@ -24,8 +24,9 @@ import (
 // Queue holds the audio queue itself along with useful methods for
 // performing actions on the queue.
 type Queue struct {
-	Queue []interfaces.Track
-	mutex sync.RWMutex
+	Queue  []interfaces.Track
+	Played []interfaces.Track
+	mutex  sync.RWMutex
 }
 
 func init() {
@@ -35,7 +36,8 @@ func init() {
 // NewQueue initializes a new queue and returns it.
 func NewQueue() *Queue {
 	return &Queue{
-		Queue: make([]interfaces.Track, 0),
+		Queue:  make([]interfaces.Track, 0),
+		Played: make([]interfaces.Track, 0),
 	}
 }
 
@@ -51,6 +53,7 @@ func (q *Queue) Length() int {
 func (q *Queue) Reset() {
 	q.mutex.Lock()
 	q.Queue = q.Queue[:0]
+	q.Played = q.Played[:0]
 	q.mutex.Unlock()
 }
 
@@ -232,8 +235,12 @@ func (q *Queue) Skip() {
 
 	// Skip the track.
 	length := len(q.Queue)
+	q.Played = append(q.Played, q.Queue[0])
 	if length > 1 {
 		q.Queue = q.Queue[1:]
+	} else if DJ.Loop {
+		q.Queue = q.Played
+		q.Played = make([]interfaces.Track, 0)
 	} else {
 		q.Queue = make([]interfaces.Track, 0)
 	}

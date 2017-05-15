@@ -39,6 +39,7 @@ type MumbleDJ struct {
 	Commands          []interfaces.Command
 	Version           string
 	Volume            float32
+	Loop              bool
 	YouTubeDL         *YouTubeDL
 	KeepAlive         chan bool
 }
@@ -70,6 +71,8 @@ func (dj *MumbleDJ) OnConnect(e *gumble.ConnectEvent) {
 		"volume": fmt.Sprintf("%.2f", viper.GetFloat64("volume.default")),
 	}).Infoln("Setting default volume...")
 	dj.Volume = float32(viper.GetFloat64("volume.default"))
+	fmt.Println(viper.GetBool("queue.loop_default"))
+	dj.Loop = viper.GetBool("queue.loop_default")
 
 	if viper.GetBool("cache.enabled") {
 		logrus.Infoln("Caching enabled.")
