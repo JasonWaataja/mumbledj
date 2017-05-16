@@ -104,8 +104,12 @@ func (c *AddNextLocalCommand) Execute(user *gumble.User, args ...string) (string
 	numTooLong := 0
 	numAdded := 0
 	var lastTrackAdded interfaces.Track
-	for i := len(tracks) - 1; i >= 0; i++ {
-		if err := DJ.Queue.InsertTrack(1, tracks[i]); err != nil {
+	insertIndex := 1
+	if DJ.Queue.Length() == 0 {
+		insertIndex = 0
+	}
+	for i := len(tracks) - 1; i >= 0; i-- {
+		if err := DJ.Queue.InsertTrack(insertIndex, tracks[i]); err != nil {
 			numTooLong++
 		} else {
 			numAdded++
