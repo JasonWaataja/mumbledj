@@ -105,6 +105,10 @@ func SetDefaultConfig() {
 	viper.SetDefault("commands.addnext.is_admin", true)
 	viper.SetDefault("commands.addnext.description", "Adds a track or playlist from a media site as the next item in the queue.")
 
+	viper.SetDefault("commands.addnextlocal.aliases", []string{"addnextlocal", "an"})
+	viper.SetDefault("commands.addnextlocal.description", "Adds a track or playlist from the local filesystem as the next item in the queue.")
+	viper.SetDefault("commands.addnextlocal.is_admin", true)
+
 	viper.SetDefault("commands.cachesize.aliases", []string{"cachesize", "cs"})
 	viper.SetDefault("commands.cachesize.is_admin", true)
 	viper.SetDefault("commands.cachesize.description", "Outputs the file size of the cache in MiB if caching is enabled.")

@@ -50,7 +50,6 @@ queue:
     # Loop to beginning of queue when finished.
     loop_default: false
 
-
 connection:
 
     # Address bot should attempt to connect to.
@@ -208,6 +207,13 @@ commands:
         is_admin: true
         description: "Adds a track or playlist from a media site as the next item in the queue."
         # addnext uses the messages defined for add.
+
+    addnextlocal:
+        aliases:
+            - "addnextlocal"
+            - "anl"
+        is_admin: true
+        description: "Adds a track or playlist from the local filesystem as the next item in the queue."
 
     cachesize:
         aliases:

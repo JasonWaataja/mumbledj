@@ -88,6 +88,11 @@ func (q *Queue) InsertTrack(i int, t interfaces.Track) error {
 	q.mutex.Lock()
 	beforeLen := len(q.Queue)
 
+	if i > beforeLen || i < 0 {
+		q.mutex.Unlock()
+		return errors.New("Adding at invalid index.")
+	}
+
 	// An error should never occur here since maxTrackDuration is restricted to
 	// ints. Any error in the configuration will be caught during yaml load.
 	maxTrackDuration, _ := time.ParseDuration(fmt.Sprintf("%ds",
@@ -214,28 +219,32 @@ func (q *Queue) Skip() {
 	}
 
 	// Remove all playlist skips if this is the last track of the playlist still in the queue.
-	if playlist := q.Queue[0].GetPlaylist(); playlist != nil {
-		id := playlist.GetID()
-		playlistIsFinished := true
+	if len(q.Queue) > 0 {
+		if playlist := q.Queue[0].GetPlaylist(); playlist != nil {
+			id := playlist.GetID()
+			playlistIsFinished := true
 
-		q.mutex.Unlock()
-		q.Traverse(func(i int, t interfaces.Track) {
-			if i != 0 && t.GetPlaylist() != nil {
-				if t.GetPlaylist().GetID() == id {
-					playlistIsFinished = false
+			q.mutex.Unlock()
+			q.Traverse(func(i int, t interfaces.Track) {
+				if i != 0 && t.GetPlaylist() != nil {
+					if t.GetPlaylist().GetID() == id {
+						playlistIsFinished = false
+					}
 				}
-			}
-		})
-		q.mutex.Lock()
+			})
+			q.mutex.Lock()
 
-		if playlistIsFinished {
-			DJ.Skips.ResetPlaylistSkips()
+			if playlistIsFinished {
+				DJ.Skips.ResetPlaylistSkips()
+			}
 		}
 	}
 
 	// Skip the track.
 	length := len(q.Queue)
-	q.Played = append(q.Played, q.Queue[0])
+	if len(q.Queue) > 0 {
+		q.Played = append(q.Played, q.Queue[0])
+	}
 	if length > 1 {
 		q.Queue = q.Queue[1:]
 	} else if DJ.Loop {
