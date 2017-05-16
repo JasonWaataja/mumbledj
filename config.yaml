@@ -50,7 +50,6 @@ queue:
     # Loop to beginning of queue when finished.
     loop_default: false
 
-
 connection:
 
     # Address bot should attempt to connect to.
