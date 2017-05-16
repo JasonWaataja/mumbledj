@@ -23,6 +23,7 @@ func init() {
 		new(AddCommand),
 		new(AddLocalCommand),
 		new(AddNextCommand),
+		new(AddNextLocalCommand),
 		new(CacheSizeCommand),
 		new(CurrentTrackCommand),
 		new(ForceSkipCommand),
