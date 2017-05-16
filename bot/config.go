@@ -234,6 +234,12 @@ func SetDefaultConfig() {
 	viper.SetDefault("commands.skipplaylist.messages.voted", "<b>%s</b> has voted to skip the current playlist.")
 	viper.SetDefault("commands.skipplaylist.messages.submitter_voted", "<b>%s</b>, the submitter of this playlist, has voted to skip. Skipping immediately.")
 
+	viper.SetDefault("commands.toggleloop.aliases", []string{"toggleloop", "tl"})
+	viper.SetDefault("commands.toggleloop.description", "Toggles whether or not to loop to the beginning of the queue upon finishing.")
+	viper.SetDefault("commands.toggleloop.is_admin", true)
+	viper.SetDefault("commands.toggleloop.messages.toggled_off", "Looping has been toggled off.")
+	viper.SetDefault("commands.toggleloop.messages.toggled_on", "Looping has been toggled on.")
+
 	viper.SetDefault("commands.toggleshuffle.aliases", []string{"toggleshuffle", "toggleshuf", "togshuf", "tsh"})
 	viper.SetDefault("commands.toggleshuffle.is_admin", true)
 	viper.SetDefault("commands.toggleshuffle.description", "Toggles automatic track shuffling on/off.")
