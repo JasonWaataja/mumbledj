@@ -63,7 +63,7 @@ func createInfoForFile(path, relPath string, info os.FileInfo) (string, bool) {
 			defer reader.Close()
 			duration, _ := bot.ReadMP3Duration(reader)
 			return "<b>" + relPath + "</b> " + reader.Title() +
-				", " + reader.Artist() + " (" + duration.String(), true
+				", " + reader.Artist() + " (" + duration.String() + ")", true
 		} else if bot.PathIsPlaylist(path) {
 			return "(Playlist) <b>" + relPath + "</b>", true
 		}
@@ -138,14 +138,9 @@ func createMessageForPlaylist(path, relPath string, submitter *gumble.User) (str
 	message := "<h3>" + relPath + "</h3>"
 	message += "<ol>\n"
 	for _, track := range tracks {
-		fullPath := bot.GetPathForLocalFile(track.GetFilename())
-		info, err := os.Stat(fullPath)
-		if err != nil {
-			continue
-		}
-		trackMessage, ok := createInfoForFile(fullPath, track.GetFilename(), info)
+		info, ok := createInfoForTrack(track)
 		if ok {
-			message += "<li>" + trackMessage + "</li>\n"
+			message += "<li>" + info + "</li>\n"
 		}
 	}
 	message += "</ol>"
