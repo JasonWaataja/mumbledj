@@ -62,7 +62,7 @@ func (c *AddNextLocalCommand) Execute(user *gumble.User, args ...string) (string
 		return "", true, err
 	}
 	if _, err := os.Stat(path); err != nil {
-		return "", true, errors.New(viper.GetString("commands.addlocal.messages.no_matching_song_error"))
+		return "", true, errors.New(viper.GetString("commands.addlocal.messages.no_matching_file_error"))
 	}
 	tracks := make([]interfaces.Track, 0)
 	if bot.PathIsSong(path) {

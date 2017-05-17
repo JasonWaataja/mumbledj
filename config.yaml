@@ -191,7 +191,7 @@ commands:
         description: "Adds a track or playlist from the local filesystem to the queue"
         messages:
             no_argument_error: "No argument provided to addlocal"
-            no_matching_song_error: "No matching song"
+            no_matching_file_error: "No matching file"
             no_filesystem_service_error: "No Filesystem service available"
             unrecognized_type_error: "Filetype does not match mp3 or m3u"
             no_valid_tracks_error: "No valid tracks were found for the provided files"
