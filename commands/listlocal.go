@@ -16,6 +16,8 @@ import (
 
 	"github.com/layeh/gumble/gumble"
 	"github.com/matthieugrieger/mumbledj/bot"
+	"github.com/matthieugrieger/mumbledj/interfaces"
+	"github.com/matthieugrieger/mumbledj/services"
 	id3 "github.com/mikkyang/id3-go"
 	"github.com/spf13/viper"
 )
@@ -70,6 +72,22 @@ func createInfoForFile(path, relPath string, info os.FileInfo) (string, bool) {
 	return "(Directory) <b>" + relPath + "</b>", true
 }
 
+func createInfoForTrack(track interfaces.Track) (string, bool) {
+	if track.IsLocal() {
+		fullPath := bot.GetPathForLocalFile(track.GetFilename())
+		info, err := os.Stat(fullPath)
+		if err != nil {
+			return "", false
+		}
+		return createInfoForFile(fullPath, track.GetFilename(), info)
+	}
+	message := "(" + track.GetService() + ") <b>"
+	message += track.GetTitle() + "</b> "
+	message += track.GetAuthor() + ", ("
+	message += track.GetDuration().String() + ")"
+	return message, true
+}
+
 func createMessageForDir(path, relPath string) (string, error) {
 	dirInfo, err := os.Stat(path)
 	if err != nil {
@@ -102,20 +120,30 @@ func createMessageForDir(path, relPath string) (string, error) {
 	return message, nil
 }
 
-func createMessageForPlaylist(path, relPath string) (string, error) {
-	tracks, err := bot.ReadPlaylistFile(path)
+func createMessageForPlaylist(path, relPath string, submitter *gumble.User) (string, error) {
+	var fs *services.Filesystem
+	for _, service := range DJ.AvailableServices {
+		asFilesystem, ok := service.(*services.Filesystem)
+		if ok {
+			fs = asFilesystem
+		}
+	}
+	if fs == nil {
+		return "", errors.New("No filesystem service.")
+	}
+	tracks, err := fs.CreateTracksForLocalFile(relPath, submitter)
 	if err != nil {
 		return "", err
 	}
 	message := "<h3>" + relPath + "</h3>"
 	message += "<ol>\n"
 	for _, track := range tracks {
-		fullPath := bot.GetPathForLocalFile(track)
+		fullPath := bot.GetPathForLocalFile(track.GetFilename())
 		info, err := os.Stat(fullPath)
 		if err != nil {
 			continue
 		}
-		trackMessage, ok := createInfoForFile(bot.GetPathForLocalFile(track), track, info)
+		trackMessage, ok := createInfoForFile(fullPath, track.GetFilename(), info)
 		if ok {
 			message += "<li>" + trackMessage + "</li>\n"
 		}
@@ -148,7 +176,7 @@ func (c *ListLocalCommand) Execute(user *gumble.User, args ...string) (string, b
 		return "", true, errors.New(viper.GetString("commands.listlocal.messages.read_failure_error"))
 	}
 	if bot.PathIsPlaylist(path) {
-		message, err := createMessageForPlaylist(path, relPath)
+		message, err := createMessageForPlaylist(path, relPath, user)
 		if err != nil {
 			return "", true, errors.New(viper.GetString("commands.listlocal.messages.read_failure_error"))
 		}
