@@ -92,7 +92,7 @@ func SetDefaultConfig() {
 	viper.SetDefault("commands.addlocal.is_admin", true)
 	viper.SetDefault("commands.addlocal.description", "Adds a track or playlist from the local filesystem to the queue")
 	viper.SetDefault("commands.addlocal.messages.no_argument_error", "No argument provided to addlocal")
-	viper.SetDefault("commands.addlocal.messages.no_matching_song_error", "No matching song")
+	viper.SetDefault("commands.addlocal.messages.no_matching_file_error", "No matching file")
 	viper.SetDefault("commands.addlocal.messages.no_filesystem_service_error", "No Filesystem service available")
 	viper.SetDefault("commands.addlocal.messages.unrecognized_type_error", "Filetype does not match mp3 or m3u")
 	viper.SetDefault("commands.addlocal.messages.no_valid_tracks_error", "No valid tracks were found for the provided files")
