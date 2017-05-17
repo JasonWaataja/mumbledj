@@ -8,18 +8,14 @@
 package services
 
 import (
-	"bufio"
-	"errors"
-	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 
+	"github.com/jamesnetherton/m3u"
 	"github.com/layeh/gumble/gumble"
 	"github.com/matthieugrieger/mumbledj/bot"
 	"github.com/matthieugrieger/mumbledj/interfaces"
 	id3 "github.com/mikkyang/id3-go"
-	"github.com/spf13/viper"
 )
 
 // Filesystem is a services that reads files from your local filesystem. It
@@ -126,32 +122,31 @@ func (fs *Filesystem) CreateTrackForAbsFile(absPath string, submitter *gumble.Us
 // CreateTracksForLocalFile scans the localPath and creates a corresponding list
 // of tracks, assuming that the file is a playlist file.
 func (fs *Filesystem) CreateTracksForLocalFile(localPath string, submitter *gumble.User) ([]interfaces.Track, error) {
-	if !bot.PathIsPlaylist(localPath) {
-		return nil, errors.New(viper.GetString("files.messages.non_playlist_error"))
-	}
-	fullPath, err := bot.GetSafePath(bot.GetPathForLocalFile(localPath))
+	cleanedPath, err := bot.GetSafePath(bot.GetPathForLocalFile(localPath))
 	if err != nil {
 		return nil, err
 	}
-	reader, err := os.Open(fullPath)
+	playlist, err := m3u.Parse(cleanedPath)
 	if err != nil {
-		return nil, errors.New(viper.GetString("files.messages.file_open_error"))
+		return nil, err
 	}
-	defer reader.Close()
-	scanner := bufio.NewScanner(reader)
 	tracks := make([]interfaces.Track, 0)
-	for scanner.Scan() {
-		text := scanner.Text()
-		if len(text) == 0 || strings.HasPrefix(text, "#") || filepath.IsAbs(text) {
+	for _, track := range playlist.Tracks {
+		address := track.URI
+		// Ignore addresses that are empty or absolute paths that point
+		// to somewhere in the filesystem.
+		if address == "" || filepath.IsAbs(address) {
 			continue
 		}
-		// This conditional doesn't assume that it could be a url. Just
-		// ignoring that option for now.
-		track, err := fs.CreateTrackForLocalFile(text, submitter)
-		if err != nil {
-			return nil, err
+		if service, err := DJ.GetService(address); err == nil {
+			if serviceTracks, err := service.GetTracks(address, submitter); err == nil {
+				tracks = append(tracks, serviceTracks...)
+			}
+		} else if bot.PathIsSong(address) {
+			if track, err := fs.CreateTrackForLocalFile(address, submitter); err == nil {
+				tracks = append(tracks, track)
+			}
 		}
-		tracks = append(tracks, track)
 	}
 	return tracks, nil
 }

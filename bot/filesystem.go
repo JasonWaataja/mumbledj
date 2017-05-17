@@ -10,7 +10,6 @@ package bot
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -18,7 +17,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jamesnetherton/m3u"
 	id3 "github.com/mikkyang/id3-go"
 	"github.com/spf13/viper"
 )
@@ -50,13 +48,17 @@ func GetPathForLocalFile(localPath string) string {
 	return filepath.Join(GetMusicDir(), localPath)
 }
 
+// GetPathElements slipts a path into its components. The first elements is a
+// slash if it is an absolute path.
 func GetPathElements(path string) []string {
 	elements := make([]string, 0)
 	path = filepath.Clean(path)
 	dir, file := filepath.Split(path)
 	dir = filepath.Clean(dir)
-	// This doesn't assume Microsoft Windows paths that could have a backslash instead.
-	for dir != "" && !strings.HasSuffix(dir, fmt.Sprintf("%c", filepath.Separator)) {
+	separator := fmt.Sprintf("%c", filepath.Separator)
+	// This doesn't assume Microsoft Windows paths that could have a
+	// backslash instead.
+	for dir != "" && dir != "." && !strings.HasSuffix(dir, separator) {
 		if len(file) > 0 {
 			elements = append(elements, file)
 		}
@@ -64,7 +66,10 @@ func GetPathElements(path string) []string {
 		dir, file = filepath.Split(path)
 		dir = filepath.Clean(dir)
 	}
-	if dir != "" {
+	if file != "" {
+		elements = append(elements, file)
+	}
+	if strings.HasSuffix(dir, separator) {
 		elements = append(elements, dir)
 	}
 	for i := 0; i < len(elements)/2; i++ {
@@ -83,8 +88,8 @@ func GetSafePath(path string) (string, error) {
 	if len(pathElements) < len(musicDirElements) {
 		return "", errors.New(viper.GetString("files.messages.non_music_dir_prefix_error"))
 	}
-	for i := 0; i < len(musicDirElements); i++ {
-		if pathElements[i] != musicDirElements[i] {
+	for i, element := range musicDirElements {
+		if pathElements[i] != element {
 			return "", errors.New(viper.GetString("files.messages.non_music_dir_prefix_error"))
 		}
 	}
@@ -117,35 +122,4 @@ func ReadMP3Duration(mp3Reader *id3.File) (time.Duration, error) {
 		return 0, err
 	}
 	return time.Duration(durationMilliseconds * 1000), nil
-}
-
-// ReadPlaylistFile takes a full path and parses the contents for a list of
-// playlable files. In order to preserve the security of the music directory,
-// only local paths that end up inside the music directory are listed. All other
-// files are discarded. Returns the list of files on success, nil and an error
-// otherwise.
-func ReadPlaylistFile(path string) ([]string, error) {
-	playlist, err := m3u.Parse(path)
-	if err != nil {
-		return nil, err
-	}
-	localPaths := make([]string, 0)
-	for _, track := range playlist.Tracks {
-		path := track.URI
-		if filepath.IsAbs(path) {
-			continue
-		}
-		address, err := url.Parse(path)
-		// Ignore uris that are not just local paths.
-		if err == nil && address.Scheme == "" {
-			cleanedPath, err := GetSafePath(GetPathForLocalFile(address.Path))
-			if err == nil && PathIsSong(cleanedPath) {
-				localPath, err := StripMusicDirPath(cleanedPath)
-				if err == nil {
-					localPaths = append(localPaths, localPath)
-				}
-			}
-		}
-	}
-	return localPaths, nil
 }
