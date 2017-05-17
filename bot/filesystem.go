@@ -48,14 +48,17 @@ func GetPathForLocalFile(localPath string) string {
 	return filepath.Join(GetMusicDir(), localPath)
 }
 
+// GetPathElements slipts a path into its components. The first elements is a
+// slash if it is an absolute path.
 func GetPathElements(path string) []string {
 	elements := make([]string, 0)
 	path = filepath.Clean(path)
 	dir, file := filepath.Split(path)
 	dir = filepath.Clean(dir)
+	separator := fmt.Sprintf("%c", filepath.Separator)
 	// This doesn't assume Microsoft Windows paths that could have a
 	// backslash instead.
-	for dir != "" && !strings.HasSuffix(dir, fmt.Sprintf("%c", filepath.Separator)) {
+	for dir != "" && dir != "." && !strings.HasSuffix(dir, separator) {
 		if len(file) > 0 {
 			elements = append(elements, file)
 		}
@@ -63,7 +66,10 @@ func GetPathElements(path string) []string {
 		dir, file = filepath.Split(path)
 		dir = filepath.Clean(dir)
 	}
-	if dir != "" {
+	if file != "" {
+		elements = append(elements, file)
+	}
+	if strings.HasSuffix(dir, separator) {
 		elements = append(elements, dir)
 	}
 	for i := 0; i < len(elements)/2; i++ {
@@ -82,8 +88,8 @@ func GetSafePath(path string) (string, error) {
 	if len(pathElements) < len(musicDirElements) {
 		return "", errors.New(viper.GetString("files.messages.non_music_dir_prefix_error"))
 	}
-	for i := 0; i < len(musicDirElements); i++ {
-		if pathElements[i] != musicDirElements[i] {
+	for i, element := range musicDirElements {
+		if pathElements[i] != element {
 			return "", errors.New(viper.GetString("files.messages.non_music_dir_prefix_error"))
 		}
 	}

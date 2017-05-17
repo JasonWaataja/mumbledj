@@ -122,7 +122,7 @@ func (fs *Filesystem) CreateTrackForAbsFile(absPath string, submitter *gumble.Us
 // CreateTracksForLocalFile scans the localPath and creates a corresponding list
 // of tracks, assuming that the file is a playlist file.
 func (fs *Filesystem) CreateTracksForLocalFile(localPath string, submitter *gumble.User) ([]interfaces.Track, error) {
-	cleanedPath, err := bot.GetSafePath(localPath)
+	cleanedPath, err := bot.GetSafePath(bot.GetPathForLocalFile(localPath))
 	if err != nil {
 		return nil, err
 	}
@@ -143,10 +143,8 @@ func (fs *Filesystem) CreateTracksForLocalFile(localPath string, submitter *gumb
 				tracks = append(tracks, serviceTracks...)
 			}
 		} else if bot.PathIsSong(address) {
-			if localPath, err := bot.StripMusicDirPath(cleanedPath); err == nil {
-				if track, err := fs.CreateTrackForLocalFile(localPath, submitter); err == nil {
-					tracks = append(tracks, track)
-				}
+			if track, err := fs.CreateTrackForLocalFile(address, submitter); err == nil {
+				tracks = append(tracks, track)
 			}
 		}
 	}
