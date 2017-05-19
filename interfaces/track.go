@@ -19,7 +19,9 @@ type Track interface {
 	GetAuthorURL() string
 	GetSubmitter() string
 	GetService() string
+	DownloadIfNeeded() error
 	GetFilename() string
+	GetFullPath() string
 	GetThumbnailURL() string
 	GetDuration() time.Duration
 	GetPlaybackOffset() time.Duration

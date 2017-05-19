@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"os"
 	"sync"
 	"time"
 
@@ -285,19 +284,10 @@ func (q *Queue) SkipPlaylist() {
 // PlayCurrent creates a new audio stream and begins playing the current track.
 func (q *Queue) PlayCurrent() error {
 	currentTrack := q.GetTrack(0)
-	var filepath string
-	if currentTrack.IsLocal() {
-		filepath = GetPathForLocalFile(currentTrack.GetFilename())
-	} else {
-		filepath = os.ExpandEnv(viper.GetString("cache.directory") + "/" + currentTrack.GetFilename())
-	}
-	if _, err := os.Stat(filepath); os.IsNotExist(err) {
-		if currentTrack.IsLocal() {
-			return errors.New(viper.GetString("files.messages.no_file_found_error"))
-		}
-		if err := DJ.YouTubeDL.Download(q.GetTrack(0)); err != nil {
-			return err
-		}
+	filepath := currentTrack.GetFullPath()
+	err := currentTrack.DownloadIfNeeded()
+	if err != nil {
+		return err
 	}
 	source := gumbleffmpeg.SourceFile(filepath)
 	DJ.AudioStream = gumbleffmpeg.New(DJ.Client, source)
