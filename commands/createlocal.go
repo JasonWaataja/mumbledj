@@ -8,11 +8,7 @@
 package commands
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/layeh/gumble/gumble"
-	"github.com/matthieugrieger/mumbledj/interfaces"
 	"github.com/spf13/viper"
 )
 
@@ -45,5 +41,5 @@ func (c *CreateLocalCommand) IsAdminCommand() bool {
 // Example return statement:
 //    return "This is a private message!", true, nil
 func (c *CreateLocalCommand) Execute(user *gumble.User, args ...string) (string, bool, error) {
-
+	return "", true, nil
 }
