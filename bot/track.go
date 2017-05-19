@@ -8,9 +8,12 @@
 package bot
 
 import (
+	"errors"
+	"os"
 	"time"
 
 	"github.com/matthieugrieger/mumbledj/interfaces"
+	"github.com/spf13/viper"
 )
 
 // Track stores all metadata related to an audio track.
@@ -70,10 +73,30 @@ func (t Track) GetService() string {
 	return t.Service
 }
 
+func (t Track) DownloadIfNeeded() error {
+	filepath := t.GetFullPath()
+	if _, err := os.Stat(filepath); os.IsNotExist(err) {
+		if t.IsLocal() {
+			return errors.New(viper.GetString("files.messages.no_file_found_error"))
+		}
+		if err := DJ.YouTubeDL.Download(t); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // GetFilename returns the name of the file stored on disk, if it exists. If no
 // file on disk exists an empty string and error are returned.
 func (t Track) GetFilename() string {
 	return t.Filename
+}
+
+func (t Track) GetFullPath() string {
+	if t.IsLocal() {
+		return GetPathForLocalFile(t.GetFilename())
+	}
+	return os.ExpandEnv(viper.GetString("cache.directory") + "/" + t.GetFilename())
 }
 
 // GetThumbnailURL returns the URL to the thumbnail for the track. If no thumbnail
