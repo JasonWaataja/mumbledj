@@ -144,6 +144,8 @@ files:
 
     # Directory to search for music in. Allowed to have shell variables.
     music_directory: "$HOME/Music"
+    # Directory to store downloaded files in relative to music_directory.
+    download_directory: "MumbleDJ"
     messages:
         no_file_found_error: "No matching file found in music directory."
         non_music_dir_prefix_error: "Attempting to use file outside of music directory."
@@ -223,6 +225,16 @@ commands:
         description: "Outputs the file size of the cache in MiB if caching is enabled."
         messages:
             current_size: "The current size of the cache is <b>%.2v MiB</b>."
+
+    createlocal:
+            aliases:
+                - "createlocal"
+                - "cl"
+            description: "Download tracks with the given URL for local use."
+            is_admin: true
+            messages:
+                no_valid_tracks_error: "No valid tracks were found with the provided URL(s)."
+                no_tracks_copied: "No tracks were able to be copied."
 
     currenttrack:
         aliases:

@@ -68,6 +68,7 @@ func SetDefaultConfig() {
 
 	// Files defaults.
 	viper.SetDefault("files.music_directory", "~/Music")
+	viper.SetDefault("files.download_directory", "MumbleDJ")
 	viper.SetDefault("files.messages.no_file_found_error", "No matching file found in music directory.")
 	viper.SetDefault("files.messages.non_music_dir_prefix_error", "Attempting to use file outside of music directory.")
 	viper.SetDefault("files.messages.non_playlist_error", "The requested file is not a .m3u playlist.")
@@ -113,6 +114,12 @@ func SetDefaultConfig() {
 	viper.SetDefault("commands.cachesize.is_admin", true)
 	viper.SetDefault("commands.cachesize.description", "Outputs the file size of the cache in MiB if caching is enabled.")
 	viper.SetDefault("commands.cachesize.messages.current_size", "The current size of the cache is <b>%.2v MiB</b>.")
+
+	viper.SetDefault("commands.createlocal.aliases", []string{"createlocal", "cl"})
+	viper.SetDefault("commands.createlocal.description", "Download tracks with the given URL for local use.")
+	viper.SetDefault("commands.createlocal.is_admin", true)
+	viper.SetDefault("commands.createlocal.messages.no_valid_tracks_error", "No valid tracks were found with the provided URL(s).")
+	viper.SetDefault("commands.createlocal.messages.no_tracks_copied", "No tracks were able to be copied.")
 
 	viper.SetDefault("commands.currenttrack.aliases", []string{"currenttrack", "currentsong", "current"})
 	viper.SetDefault("commands.currenttrack.is_admin", false)
