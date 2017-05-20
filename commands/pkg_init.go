@@ -25,6 +25,7 @@ func init() {
 		new(AddNextCommand),
 		new(AddNextLocalCommand),
 		new(CacheSizeCommand),
+		new(CreateLocalCommand),
 		new(CurrentTrackCommand),
 		new(ForceSkipCommand),
 		new(ForceSkipPlaylistCommand),
