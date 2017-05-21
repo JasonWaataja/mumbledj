@@ -30,7 +30,7 @@ func NewFilesystemService() *Filesystem {
 	return &Filesystem{
 		&GenericService{
 			ReadableName: "Filesystem",
-			Format:       "bestaudio",
+			Format:       "mp3",
 			TrackRegex: []*regexp.Regexp{
 				regexp.MustCompile(`$^`),
 			},

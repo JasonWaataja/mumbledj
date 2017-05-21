@@ -31,7 +31,7 @@ func NewMixcloudService() *Mixcloud {
 	return &Mixcloud{
 		&GenericService{
 			ReadableName: "Mixcloud",
-			Format:       "m4a",
+			Format:       "mp3",
 			TrackRegex: []*regexp.Regexp{
 				regexp.MustCompile(`https?:\/\/(www\.)?mixcloud\.com\/([\w-]+)\/([\w-]+)(#t=\n\n?(:\n\n)*)?`),
 			},
@@ -103,7 +103,7 @@ func (mc *Mixcloud) GetTracks(url string, submitter *gumble.User) ([]interfaces.
 		Submitter:      submitter.Name,
 		Service:        mc.ReadableName,
 		ThumbnailURL:   thumbnail,
-		Filename:       id + ".track",
+		Filename:       id + ".mp3",
 		Duration:       duration,
 		PlaybackOffset: offset,
 		Playlist:       nil,

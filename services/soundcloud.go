@@ -34,7 +34,7 @@ func NewSoundCloudService() *SoundCloud {
 	return &SoundCloud{
 		&GenericService{
 			ReadableName: "SoundCloud",
-			Format:       "bestaudio",
+			Format:       "mp3",
 			TrackRegex: []*regexp.Regexp{
 				regexp.MustCompile(`https?:\/\/(www\.)?soundcloud\.com\/([\w-]+)\/([\w-]+)(#t=\n\n?(:\n\n)*)?`),
 			},
@@ -184,7 +184,7 @@ func (sc *SoundCloud) getTrack(obj *jason.Object, offset time.Duration, submitte
 		AuthorURL:      authorURL,
 		Submitter:      submitter.Name,
 		Service:        sc.ReadableName,
-		Filename:       id + ".track",
+		Filename:       id + ".mp3",
 		ThumbnailURL:   thumbnail,
 		Duration:       duration,
 		PlaybackOffset: offset,

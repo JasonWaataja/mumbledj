@@ -30,23 +30,15 @@ func (yt *YouTubeDL) Download(t interfaces.Track) error {
 		player = "--prefer-avconv"
 	}
 
-	filepath := os.ExpandEnv(viper.GetString("cache.directory") + "/" + t.GetFilename())
-
-	// Determine which format to use.
-	format := "bestaudio"
-	for _, service := range DJ.AvailableServices {
-		if service.GetReadableName() == t.GetService() {
-			format = service.GetFormat()
-		}
-	}
+	filepath := t.GetFullPath()
 
 	// Check to see if track is already downloaded.
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
 		var cmd *exec.Cmd
 		if t.GetService() == "Mixcloud" {
-			cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", filepath, "--format", format, "--external-downloader", "aria2c", player, t.GetURL())
+			cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", filepath, "-x", "--audio-format", "mp3", "--external-downloader", "aria2c", player, t.GetURL())
 		} else {
-			cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", filepath, "--format", format, player, t.GetURL())
+			cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", filepath, "-x", "--audio-format", "mp3", player, t.GetURL())
 		}
 		output, err := cmd.CombinedOutput()
 		if err != nil {
@@ -69,7 +61,7 @@ func (yt *YouTubeDL) Download(t interfaces.Track) error {
 // Delete deletes the audio file associated with the incoming `track` object.
 func (yt *YouTubeDL) Delete(t interfaces.Track) error {
 	if !viper.GetBool("cache.enabled") {
-		filePath := os.ExpandEnv(viper.GetString("cache.directory") + "/" + t.GetFilename())
+		filePath := t.GetFullPath()
 		if _, err := os.Stat(filePath); err == nil {
 			if err := os.Remove(filePath); err == nil {
 				return nil
