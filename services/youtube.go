@@ -35,7 +35,7 @@ func NewYouTubeService() *YouTube {
 	return &YouTube{
 		&GenericService{
 			ReadableName: "YouTube",
-			Format:       "bestaudio",
+			Format:       "mp3",
 			TrackRegex: []*regexp.Regexp{
 				regexp.MustCompile(`https?:\/\/www.youtube.com\/watch\?v=(?P<id>[\w-]+)(?P<timestamp>\&t=\d*m?\d*s?)?`),
 				regexp.MustCompile(`https?:\/\/youtube.com\/watch\?v=(?P<id>[\w-]+)(?P<timestamp>\&t=\d*m?\d*s?)?`),
@@ -239,7 +239,7 @@ func (yt *YouTube) getTrack(id string, submitter *gumble.User, offset time.Durat
 		Author:         author,
 		Submitter:      submitter.Name,
 		Service:        yt.ReadableName,
-		Filename:       id + ".track",
+		Filename:       id + ".mp3",
 		ThumbnailURL:   thumbnail,
 		Duration:       duration,
 		PlaybackOffset: offset,
