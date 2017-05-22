@@ -9,6 +9,7 @@ package commands
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -52,6 +53,42 @@ func createDownloadDirIfNeeded() error {
 	return nil
 }
 
+func createPlaylistData(tracks []interfaces.Track) map[string][]interfaces.Track {
+	trackLists := make(map[string][]interfaces.Track)
+	for _, t := range tracks {
+		playlist := t.GetPlaylist()
+		if playlist != nil {
+			trackLists[playlist.GetTitle()] = append(trackLists[playlist.GetTitle()], t)
+		}
+	}
+	return trackLists
+}
+
+// writePlaylists writes the playlists to files in m3u format and returns the
+// playlist names created.
+func writePlaylists(playlists map[string][]interfaces.Track) []string {
+	writtenTracks := make([]string, 0)
+	for name, tracks := range playlists {
+		name += ".m3u"
+		name = filepath.Join(viper.GetString("files.download_directory"), name)
+		writePath := bot.GetPathForLocalFile(name)
+		writer, err := os.Create(writePath)
+		if err != nil {
+			continue
+		}
+		fmt.Fprintln(writer, "#EXTM3U")
+		for _, track := range tracks {
+			fmt.Fprint(writer, "#EXTINF:")
+			fmt.Fprint(writer, int(track.GetDuration().Seconds()))
+			fmt.Fprintln(writer, ","+track.GetAuthor()+" - "+track.GetTitle())
+			fmt.Fprintln(writer, track.GetFilename())
+		}
+		writer.Close()
+		writtenTracks = append(writtenTracks, name)
+	}
+	return writtenTracks
+}
+
 // Execute executes the command with the given user and arguments.
 // Return value descriptions:
 //    string: A message to be returned to the user upon successful execution.
@@ -83,6 +120,10 @@ func (c *CreateLocalCommand) Execute(user *gumble.User, args ...string) (string,
 			addedNames = append(addedNames, relPath)
 		}
 	}
+
+	playlists := createPlaylistData(allTracks)
+	addedNames = append(addedNames, writePlaylists(playlists)...)
+
 	if len(addedNames) == 0 {
 		return viper.GetString("commands.createlocal.messages.no_tracks_copied"), true, nil
 	}

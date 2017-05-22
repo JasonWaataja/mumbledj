@@ -16,6 +16,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/matthieugrieger/mumbledj/interfaces"
+	id3 "github.com/mikkyang/id3-go"
 	"github.com/spf13/viper"
 )
 
@@ -87,28 +88,36 @@ func DownloadMP3To(t interfaces.Track, path string) error {
 		}
 	}
 
+	// Check to see if track is already downloaded.
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		return nil
+	}
+
+	var cmd *exec.Cmd
 	noExt := strings.TrimSuffix(path, filepath.Ext(path))
 	outputPath := noExt + ".track"
-
-	// Check to see if track is already downloaded.
-	if _, err := os.Stat(outputPath); os.IsNotExist(err) {
-		var cmd *exec.Cmd
-		if t.GetService() == "Mixcloud" {
-			cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", outputPath, "--format", format, "--extract-audio", "--audio-format", "mp3", "--external-downloader", "aria2c", player, t.GetURL())
-		} else {
-			cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", outputPath, "--format", format, "--extract-audio", "--audio-format", "mp3", player, t.GetURL())
+	if t.GetService() == "Mixcloud" {
+		cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", outputPath, "--format", format, "--extract-audio", "--audio-format", "mp3", "--external-downloader", "aria2c", player, t.GetURL())
+	} else {
+		cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", outputPath, "--format", format, "--extract-audio", "--audio-format", "mp3", player, t.GetURL())
+	}
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		args := ""
+		for s := range cmd.Args {
+			args += cmd.Args[s] + " "
 		}
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			args := ""
-			for s := range cmd.Args {
-				args += cmd.Args[s] + " "
-			}
-			logrus.Warnf("%s\n%s\nyoutube-dl: %s", args, string(output), err.Error())
-			return errors.New("Track download failed")
-		}
+		logrus.Warnf("%s\n%s\nyoutube-dl: %s", args, string(output), err.Error())
+		return errors.New("Track download failed")
 	}
 	asMP3Path := noExt + ".mp3"
+	reader, err := id3.Open(asMP3Path)
+	if err != nil {
+		return errors.New("Failed to open mp3 file.")
+	}
+	reader.SetTitle(t.GetTitle())
+	reader.SetArtist(t.GetAuthor())
+	reader.Close()
 	if asMP3Path != path {
 		err := os.Rename(asMP3Path, path)
 		if err != nil {
