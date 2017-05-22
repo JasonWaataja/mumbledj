@@ -9,7 +9,6 @@ package commands
 
 import (
 	"errors"
-	"io"
 	"os"
 	"path/filepath"
 
@@ -51,33 +50,6 @@ func createDownloadDirIfNeeded() error {
 		return errors.New("Download directory is not a directory.")
 	}
 	return nil
-}
-
-// importURL takes a track and copies the downloaded file into the correct
-// location, returning the path that it was copied copied into.
-func importURL(track interfaces.Track) (string, error) {
-	sourcePath := track.GetFullPath()
-	destName := filepath.Join(viper.GetString("files.download_directory"), track.GetTitle())
-	destPath := bot.GetPathForLocalFile(destName)
-	err := createDownloadDirIfNeeded()
-	if err != nil {
-		return "", err
-	}
-	reader, err := os.Open(sourcePath)
-	if err != nil {
-		return "", err
-	}
-	defer reader.Close()
-	writer, err := os.Create(destPath)
-	if err != nil {
-		return "", err
-	}
-	defer writer.Close()
-	_, err = io.Copy(writer, reader)
-	if err != nil {
-		return "", err
-	}
-	return destName, nil
 }
 
 // Execute executes the command with the given user and arguments.

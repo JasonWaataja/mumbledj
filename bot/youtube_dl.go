@@ -91,9 +91,9 @@ func DownloadMP3To(t interfaces.Track, path string) error {
 	if _, err := os.Stat(outputPath); os.IsNotExist(err) {
 		var cmd *exec.Cmd
 		if t.GetService() == "Mixcloud" {
-			cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", "'"+outputPath+"'", "--format", format, "--extract-audio", "--audio-format", "mp3", "--external-downloader", "aria2c", player, t.GetURL())
+			cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", outputPath, "--format", format, "--extract-audio", "--audio-format", "mp3", "--external-downloader", "aria2c", player, t.GetURL())
 		} else {
-			cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", "'"+outputPath+"'", "--format", format, "--extract-audio", "--audio-format", "mp3", player, t.GetURL())
+			cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", outputPath, "--format", format, "--extract-audio", "--audio-format", "mp3", player, t.GetURL())
 		}
 		output, err := cmd.CombinedOutput()
 		if err != nil {
