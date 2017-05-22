@@ -105,12 +105,10 @@ func (c *CreateLocalCommand) Execute(user *gumble.User, args ...string) (string,
 	// Store the tracks that we've copied for the user later.
 	addedNames := make([]string, 0)
 	for _, track := range allTracks {
-		err := track.DownloadIfNeeded()
+		relPath := filepath.Join(viper.GetString("files.download_directory"), track.GetTitle()+".mp3")
+		err := bot.DownloadMP3To(track, bot.GetPathForLocalFile(relPath))
 		if err == nil {
-			destName, err := importURL(track)
-			if err == nil {
-				addedNames = append(addedNames, destName)
-			}
+			addedNames = append(addedNames, relPath)
 		}
 	}
 	if len(addedNames) == 0 {
