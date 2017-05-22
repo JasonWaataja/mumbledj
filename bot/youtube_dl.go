@@ -11,6 +11,8 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/matthieugrieger/mumbledj/interfaces"
@@ -31,6 +33,17 @@ func (yt *YouTubeDL) Download(t interfaces.Track) error {
 	}
 
 	filepath := t.GetFullPath()
+<<<<<<< HEAD
+=======
+
+	// Determine which format to use.
+	format := "bestaudio"
+	for _, service := range DJ.AvailableServices {
+		if service.GetReadableName() == t.GetService() {
+			format = service.GetFormat()
+		}
+	}
+>>>>>>> Got initial version working of this command
 
 	// Check to see if track is already downloaded.
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
@@ -55,6 +68,53 @@ func (yt *YouTubeDL) Download(t interfaces.Track) error {
 		}
 	}
 
+	return nil
+}
+
+// DownloadMP3To downloads the track like it normally would but instead then
+// takes the audio and stores it in a file at path.
+func DownloadMP3To(t interfaces.Track, path string) error {
+	player := "--prefer-ffmpeg"
+	if viper.GetString("defaults.player_command") == "avconv" {
+		player = "--prefer-avconv"
+	}
+
+	// Determine which format to use.
+	format := "bestaudio"
+	for _, service := range DJ.AvailableServices {
+		if service.GetReadableName() == t.GetService() {
+			format = service.GetFormat()
+		}
+	}
+
+	noExt := strings.TrimSuffix(path, filepath.Ext(path))
+	outputPath := noExt + ".track"
+
+	// Check to see if track is already downloaded.
+	if _, err := os.Stat(outputPath); os.IsNotExist(err) {
+		var cmd *exec.Cmd
+		if t.GetService() == "Mixcloud" {
+			cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", "'"+outputPath+"'", "--format", format, "--extract-audio", "--audio-format", "mp3", "--external-downloader", "aria2c", player, t.GetURL())
+		} else {
+			cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", "'"+outputPath+"'", "--format", format, "--extract-audio", "--audio-format", "mp3", player, t.GetURL())
+		}
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			args := ""
+			for s := range cmd.Args {
+				args += cmd.Args[s] + " "
+			}
+			logrus.Warnf("%s\n%s\nyoutube-dl: %s", args, string(output), err.Error())
+			return errors.New("Track download failed")
+		}
+	}
+	asMP3Path := noExt + ".mp3"
+	if asMP3Path != path {
+		err := os.Rename(asMP3Path, path)
+		if err != nil {
+			return errors.New("Failed to rename to correct file.")
+		}
+	}
 	return nil
 }
 
