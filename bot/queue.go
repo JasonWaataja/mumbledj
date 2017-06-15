@@ -300,6 +300,9 @@ func (q *Queue) PlayCurrent() error {
 
 	if viper.GetBool("queue.announce_new_tracks") {
 		message := "<table>\n"
+		// Only add the thumbnail URL if theres is something to display.
+		// Without this conditional, the formatting is messed up on an
+		// empty URL.
 		if currentTrack.GetThumbnailURL() != "" {
 			message += `	<tr>
 						<td align="center"><img src="%s" width=150 /></td>

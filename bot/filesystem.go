@@ -21,6 +21,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+// GetMusicDir returns the directory in which music and playlists are stored.
+// Files outside this directory are not allowed to be accessed.
 func GetMusicDir() string {
 	return os.ExpandEnv(viper.GetString("files.music_directory"))
 }
@@ -48,7 +50,7 @@ func GetPathForLocalFile(localPath string) string {
 	return filepath.Join(GetMusicDir(), localPath)
 }
 
-// GetPathElements slipts a path into its components. The first elements is a
+// GetPathElements splits a path into its components. The first elements is a
 // slash if it is an absolute path.
 func GetPathElements(path string) []string {
 	elements := make([]string, 0)
