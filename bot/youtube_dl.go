@@ -34,8 +34,6 @@ func (yt *YouTubeDL) Download(t interfaces.Track) error {
 	}
 
 	filepath := t.GetFullPath()
-<<<<<<< HEAD
-=======
 
 	// Determine which format to use.
 	format := "bestaudio"
@@ -44,7 +42,6 @@ func (yt *YouTubeDL) Download(t interfaces.Track) error {
 			format = service.GetFormat()
 		}
 	}
->>>>>>> Got initial version working of this command
 
 	// Check to see if track is already downloaded.
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
