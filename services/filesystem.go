@@ -138,6 +138,9 @@ func (fs *Filesystem) CreateTracksForLocalFile(localPath string, submitter *gumb
 		if address == "" || filepath.IsAbs(address) {
 			continue
 		}
+		// Interpret paths as relative to the directory the playlist is
+		// located in.
+		address = filepath.Join(filepath.Dir(cleanedPath), address)
 		if service, err := DJ.GetService(address); err == nil {
 			if serviceTracks, err := service.GetTracks(address, submitter); err == nil {
 				tracks = append(tracks, serviceTracks...)
