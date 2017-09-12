@@ -30,7 +30,7 @@ func NewFilesystemService() *Filesystem {
 	return &Filesystem{
 		&GenericService{
 			ReadableName: "Filesystem",
-			Format:       "mp3",
+			Format:       "bestaudio",
 			TrackRegex: []*regexp.Regexp{
 				regexp.MustCompile(`$^`),
 			},
@@ -140,7 +140,10 @@ func (fs *Filesystem) CreateTracksForLocalFile(localPath string, submitter *gumb
 		}
 		// Interpret paths as relative to the directory the playlist is
 		// located in.
-		address = filepath.Join(filepath.Dir(cleanedPath), address)
+		address, err = bot.StripMusicDirPath(filepath.Join(filepath.Dir(cleanedPath), address))
+		if err != nil {
+			return nil, err
+		}
 		if service, err := DJ.GetService(address); err == nil {
 			if serviceTracks, err := service.GetTracks(address, submitter); err == nil {
 				tracks = append(tracks, serviceTracks...)

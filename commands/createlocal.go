@@ -64,6 +64,12 @@ func createPlaylistData(tracks []interfaces.Track) map[string][]interfaces.Track
 	return trackLists
 }
 
+// MP3OutputFilenameFor returns what a downloaded file for that track would be
+// called. Has nothing to do with directories, only the final file name.
+func MP3OutputFilenameFor(track interfaces.Track) string {
+	return track.GetTitle() + ".mp3"
+}
+
 // writePlaylists writes the playlists to files in m3u format and returns the
 // playlist names created.
 func writePlaylists(playlists map[string][]interfaces.Track) []string {
@@ -81,7 +87,7 @@ func writePlaylists(playlists map[string][]interfaces.Track) []string {
 			fmt.Fprint(writer, "#EXTINF:")
 			fmt.Fprint(writer, int(track.GetDuration().Seconds()))
 			fmt.Fprintln(writer, ","+track.GetAuthor()+" - "+track.GetTitle())
-			fmt.Fprintln(writer, track.GetFilename())
+			fmt.Fprintln(writer, MP3OutputFilenameFor(track))
 		}
 		writer.Close()
 		writtenTracks = append(writtenTracks, name)
@@ -114,7 +120,7 @@ func (c *CreateLocalCommand) Execute(user *gumble.User, args ...string) (string,
 	// Store the tracks that we've copied for the user later.
 	addedNames := make([]string, 0)
 	for _, track := range allTracks {
-		relPath := filepath.Join(viper.GetString("files.download_directory"), track.GetTitle()+".mp3")
+		relPath := filepath.Join(viper.GetString("files.download_directory"), MP3OutputFilenameFor(track))
 		err := bot.DownloadMP3To(track, bot.GetPathForLocalFile(relPath))
 		if err == nil {
 			addedNames = append(addedNames, relPath)

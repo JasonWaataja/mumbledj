@@ -35,7 +35,7 @@ func NewYouTubeService() *YouTube {
 	return &YouTube{
 		&GenericService{
 			ReadableName: "YouTube",
-			Format:       "mp3",
+			Format:       "bestaudio",
 			TrackRegex: []*regexp.Regexp{
 				regexp.MustCompile(`https?:\/\/www.youtube.com\/watch\?v=(?P<id>[\w-]+)(?P<timestamp>\&t=\d*m?\d*s?)?`),
 				regexp.MustCompile(`https?:\/\/youtube.com\/watch\?v=(?P<id>[\w-]+)(?P<timestamp>\&t=\d*m?\d*s?)?`),

@@ -47,9 +47,9 @@ func (yt *YouTubeDL) Download(t interfaces.Track) error {
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
 		var cmd *exec.Cmd
 		if t.GetService() == "Mixcloud" {
-			cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", filepath, "-x", "--audio-format", "mp3", "--external-downloader", "aria2c", player, t.GetURL())
+			cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", filepath, "--formmat", format, "-x", "--external-downloader", "aria2c", player, t.GetURL())
 		} else {
-			cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", filepath, "-x", "--audio-format", "mp3", player, t.GetURL())
+			cmd = exec.Command("youtube-dl", "--verbose", "--no-mtime", "--output", filepath, "--format", format, "-x", player, t.GetURL())
 		}
 		output, err := cmd.CombinedOutput()
 		if err != nil {
