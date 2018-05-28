@@ -27,21 +27,28 @@ func GetMusicDir() string {
 	return os.ExpandEnv(viper.GetString("files.music_directory"))
 }
 
-// PathIsSong takes a path and returns true if it ends with an mp3 extension.
-// This could be implemented with strings.HasSuffix but this regex allows for
-// capital letters. Also returns false if there was an error with the regex.
-func PathIsSong(path string) bool {
-	ext := filepath.Ext(path)
-	isSong, err := regexp.MatchString(`[mM][pP]3`, ext)
-	return err == nil && isSong
-}
-
 // PathIsPlaylist takes a path and returns true if it ends with an m3u
 // extension. Also returns false if there was an error with the regex.
 func PathIsPlaylist(path string) bool {
 	ext := filepath.Ext(path)
 	isPlaylist, err := regexp.MatchString(`[mM]3[uU]`, ext)
 	return err == nil && isPlaylist
+}
+
+// PathIsSong takes a path and returns true if it ends with an mp3 extension.
+// This could be implemented with strings.HasSuffix but this regex allows for
+// capital letters. Also returns false if there was an error with the regex.
+func PathIsMp3(path string) bool {
+	ext := filepath.Ext(path)
+	isSong, err := regexp.MatchString(`[mM][pP]3`, ext)
+	return err == nil && isSong
+}
+
+// PathIsSong takes a path and returns true if it ends with an mp3 extension.
+// This could be implemented with strings.HasSuffix but this regex allows for
+// capital letters. Also returns false if there was an error with the regex.
+func PathIsSong(path string) bool {
+	return !PathIsPlaylist(path)
 }
 
 // GetPathForLocalFile returns a full file path with the given local path

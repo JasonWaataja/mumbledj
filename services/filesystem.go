@@ -8,6 +8,7 @@
 package services
 
 import (
+	"io/ioutil"
 	"path/filepath"
 	"regexp"
 
@@ -58,10 +59,8 @@ func (fs *Filesystem) GetTracks(url string, submitter *gumble.User) ([]interface
 	return tracks, nil
 }
 
-// CreateTrackForPath creates a bot.Track for the given localPath which is
-// interpreted relative to the music directory. Returns the track on success and
-// nil and an error on failure.
-func (fs *Filesystem) CreateTrackForLocalFile(localPath string, submitter *gumble.User) (*bot.Track, error) {
+// CreateTrackForMp3File returns a track for an mp3 file.
+func (fs *Filesystem) CreateTrackForMp3File(localPath string, submitter *gumble.User) (*bot.Track, error) {
 	path, err := bot.GetSafePath(bot.GetPathForLocalFile(localPath))
 	if err != nil {
 		return nil, err
@@ -74,10 +73,14 @@ func (fs *Filesystem) CreateTrackForLocalFile(localPath string, submitter *gumbl
 	// This function returns 0 on failure, which is the desired behavior.
 	duration, _ := bot.ReadMP3Duration(mp3Reader)
 	// Leave out some fields for their zero values.
+	title := mp3Reader.Title()
+	if len(title) == 0 {
+		title = filepath.Base(localPath)
+	}
 	track := bot.Track{
 		Local:          true,
 		ID:             localPath,
-		Title:          mp3Reader.Title(),
+		Title:          title,
 		Author:         mp3Reader.Artist(),
 		Submitter:      submitter.Name,
 		Service:        fs.GetReadableName(),
@@ -88,35 +91,48 @@ func (fs *Filesystem) CreateTrackForLocalFile(localPath string, submitter *gumbl
 	return &track, nil
 }
 
-func (fs *Filesystem) CreateTrackForAbsFile(absPath string, submitter *gumble.User) (*bot.Track, error) {
-	path, err := bot.GetSafePath(absPath)
+// CreateTrackForPath creates a bot.Track for the given localPath which is
+// interpreted relative to the music directory. Returns the track on success and
+// nil and an error on failure.
+func (fs *Filesystem) CreateTrackForLocalFile(localPath string, submitter *gumble.User) (*bot.Track, error) {
+	if bot.PathIsMp3(localPath) {
+		return fs.CreateTrackForMp3File(localPath, submitter)
+	} else {
+		_, err := bot.GetSafePath(bot.GetPathForLocalFile(localPath))
+		if err != nil {
+			return nil, err
+		}
+		track := bot.Track{
+			Local:          true,
+			ID:             localPath,
+			Title:          filepath.Base(localPath),
+			Submitter:      submitter.Name,
+			Service:        fs.GetReadableName(),
+			Filename:       localPath,
+			PlaybackOffset: 0,
+		}
+		return &track, nil
+	}
+}
+
+func (fs *Filesystem) CreateTracksForDir(localPath string, submitter *gumble.User) ([]interfaces.Track, error) {
+	path, err := bot.GetSafePath(bot.GetPathForLocalFile(localPath))
 	if err != nil {
 		return nil, err
 	}
-	mp3Reader, err := id3.Open(path)
+	entries, err := ioutil.ReadDir(path)
 	if err != nil {
 		return nil, err
 	}
-	defer mp3Reader.Close()
-	// This function returns 0 on failure, which is the desired behavior.
-	duration, _ := bot.ReadMP3Duration(mp3Reader)
-	filename, err := bot.StripMusicDirPath(path)
-	if err != nil {
-		return nil, err
+	tracks := make([]interfaces.Track, 0)
+	for _, entry := range entries {
+		entryPath := filepath.Join(localPath, entry.Name())
+		track, err := fs.CreateTrackForLocalFile(entryPath, submitter)
+		if err == nil {
+			tracks = append(tracks, track)
+		}
 	}
-	// Leaving out some fields for their zero values.
-	track := bot.Track{
-		Local:          true,
-		ID:             filename,
-		Title:          mp3Reader.Title(),
-		Author:         mp3Reader.Artist(),
-		Submitter:      submitter.Name,
-		Service:        fs.GetReadableName(),
-		Filename:       filename,
-		Duration:       duration,
-		PlaybackOffset: 0,
-	}
-	return &track, nil
+	return tracks, nil
 }
 
 // CreateTracksForLocalFile scans the localPath and creates a corresponding list

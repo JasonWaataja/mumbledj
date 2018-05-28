@@ -67,7 +67,30 @@ func (c *AddLocalCommand) Execute(user *gumble.User, args ...string) (string, bo
 		return "", true, errors.New(viper.GetString("commands.addlocal.messages.no_matching_file_error"))
 	}
 	tracks := make([]interfaces.Track, 0)
-	if bot.PathIsSong(path) {
+	info, err := os.Stat(path)
+	if bot.PathIsPlaylist(path) {
+		for _, service := range DJ.AvailableServices {
+			fs, ok := service.(*services.Filesystem)
+			if ok {
+				newTracks, err := fs.CreateTracksForLocalFile(localPath, user)
+				if err != nil {
+					return "", true, err
+				}
+				tracks = append(tracks, newTracks...)
+			}
+		}
+	} else if info.IsDir() {
+		for _, service := range DJ.AvailableServices {
+			fs, ok := service.(*services.Filesystem)
+			if ok {
+				newTracks, err := fs.CreateTracksForDir(localPath, user)
+				if err != nil {
+					return "", true, err
+				}
+				tracks = append(tracks, newTracks...)
+			}
+		}
+	} else {
 		found := false
 		for _, service := range DJ.AvailableServices {
 			fs, ok := service.(*services.Filesystem)
@@ -84,21 +107,7 @@ func (c *AddLocalCommand) Execute(user *gumble.User, args ...string) (string, bo
 		if !found {
 			return "", true, errors.New(viper.GetString("commands.addlocal.messages.no_filesystem_service_error"))
 		}
-	} else if bot.PathIsPlaylist(path) {
-		for _, service := range DJ.AvailableServices {
-			fs, ok := service.(*services.Filesystem)
-			if ok {
-				newTracks, err := fs.CreateTracksForLocalFile(localPath, user)
-				if err != nil {
-					return "", true, err
-				}
-				tracks = append(tracks, newTracks...)
-			}
-		}
-	} else {
-		return "", true, errors.New(viper.GetString("commands.addlocal.messages.unrecognized_filetype_error"))
 	}
-
 	if len(tracks) == 0 {
 		return "", true, errors.New(viper.GetString("commands.addlocal.messages.no_valid_tracks_error"))
 	}
