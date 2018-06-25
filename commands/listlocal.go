@@ -55,7 +55,7 @@ func (c *ListLocalCommand) IsAdminCommand() bool {
 // The second return value indicates whether it should be displayed.
 func createInfoForFile(path, relPath string, info os.FileInfo) (string, bool) {
 	if info.Mode().IsRegular() {
-		if bot.PathIsSong(path) {
+		if bot.PathIsMp3(path) {
 			reader, err := id3.Open(path)
 			if err != nil {
 				return "", false
@@ -66,8 +66,9 @@ func createInfoForFile(path, relPath string, info os.FileInfo) (string, bool) {
 				", " + reader.Artist() + " (" + duration.String() + ")", true
 		} else if bot.PathIsPlaylist(path) {
 			return "(Playlist) <b>" + relPath + "</b>", true
+		} else {
+			return "<b>" + relPath + "</b>", true
 		}
-		return "", false
 	}
 	return "(Directory) <b>" + relPath + "</b>", true
 }

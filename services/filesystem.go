@@ -127,9 +127,11 @@ func (fs *Filesystem) CreateTracksForDir(localPath string, submitter *gumble.Use
 	tracks := make([]interfaces.Track, 0)
 	for _, entry := range entries {
 		entryPath := filepath.Join(localPath, entry.Name())
-		track, err := fs.CreateTrackForLocalFile(entryPath, submitter)
-		if err == nil {
-			tracks = append(tracks, track)
+		if !bot.PathIsPlaylist(entryPath) {
+			track, err := fs.CreateTrackForLocalFile(entryPath, submitter)
+			if err == nil {
+				tracks = append(tracks, track)
+			}
 		}
 	}
 	return tracks, nil
