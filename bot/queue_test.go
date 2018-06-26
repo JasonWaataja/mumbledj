@@ -206,6 +206,26 @@ func (suite *QueueTestSuite) TestRandomNextTrackWhenQueueWasNotEmpty() {
 	suite.NotEqual(suite.SecondTrack, DJ.Queue.GetTrack(1), "The next track should be randomized.")
 }
 
+func (suite *QueueTestSuite) TestLoops() {
+	// TODO: Is this necessary?
+	originalVal := DJ.Loop
+	DJ.Loop = true
+	tracks := make([]interfaces.Track, 0)
+	tracks = append(tracks, suite.FirstTrack)
+	tracks = append(tracks, suite.SecondTrack)
+	tracks = append(tracks, suite.ThirdTrack)
+	for _, tracks := range tracks {
+		DJ.Queue.AppendTrack(tracks)
+	}
+	for i := 0; i < len(tracks); i++ {
+		DJ.Queue.Skip()
+	}
+	DJ.Queue.Traverse(func(i int, track interfaces.Track) {
+		suite.Equal(track, tracks[i])
+	})
+	DJ.Loop = originalVal
+}
+
 // TODO: Fix these tests.
 /*func (suite *QueueTestSuite) TestSkipWhenQueueHasLessThanTwoTracks() {
 	DJ.Queue.AppendTrack(suite.FirstTrack)

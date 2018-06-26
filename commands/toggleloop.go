@@ -41,10 +41,11 @@ func (c *ToggleLoopCommand) IsAdminCommand() bool {
 // Example return statement:
 //    return "This is a private message!", true, nil
 func (c *ToggleLoopCommand) Execute(user *gumble.User, args ...string) (string, bool, error) {
-	new_value := !DJ.Loop
-	DJ.Loop = new_value
-	if new_value {
+	newValue := !DJ.Loop
+	DJ.Loop = newValue
+	if newValue {
 		return viper.GetString("commands.toggleloop.messages.toggled_on"), false, nil
+	} else {
+		return viper.GetString("commands.toggleloop.messages.toggled_off"), false, nil
 	}
-	return viper.GetString("commands.toggleloop.messages.toggled_off"), false, nil
 }
